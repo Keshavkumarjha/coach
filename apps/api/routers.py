@@ -29,7 +29,7 @@ router.register(r"transactions", PaymentTransactionViewSet, basename="transactio
 
 # router.register(r"announcements", AnnouncementViewSet, basename="announcements")
 router.register(r"wa-campaigns", WhatsAppCampaignViewSet, basename="wa-campaigns")
-router.register(r"reviews", ReviewViewSet, basename="reviews")
+
 
 # router.register(r"idcard-templates", IdCardTemplateViewSet, basename="idcard-templates")
 # router.register(r"idcards", GeneratedIdCardViewSet, basename="idcards")
