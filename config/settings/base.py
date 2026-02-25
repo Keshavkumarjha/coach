@@ -89,11 +89,26 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
 ]
 
 LOCAL_APPS = [
-    "coachmaster.users",
-    # Your stuff: custom apps go here
+    # "django.contrib.gis",
+
+    "apps.common",
+    "apps.accounts",
+    "apps.orgs",
+    "apps.academics",
+    "apps.attendance",
+    "apps.billing",
+    "apps.comms",
+    "apps.assessments",
+    "apps.marketing",
+    "apps.reviews",
+    "apps.idcards",
+
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -111,7 +126,7 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "apps.accounts.User"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-redirect-url
 LOGIN_REDIRECT_URL = "users:redirect"
 # https://docs.djangoproject.com/en/dev/ref/settings/#login-url
@@ -201,7 +216,63 @@ TEMPLATES = [
         },
     },
 ]
+AUTH_USER_MODEL = "accounts.User"
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "accounts.throttles.LoginRateThrottle",          # custom
+        "accounts.throttles.BranchJoinRateThrottle",     # custom
+        "accounts.throttles.OrgSignupRateThrottle",      # custom
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "200/day",
+        "user": "2000/day",
+        "login": "10/min",
+        "branch_join": "6/hour",
+        "org_signup": "5/day",
+    },
+    "EXCEPTION_HANDLER": "accounts.exceptions.custom_exception_handler",
+}
+
+# ---- SimpleJWT Security ----
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+
+    # Strongly recommended:
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+
+    "UPDATE_LAST_LOGIN": True,
+
+    # Signing (use env var in production!)
+    "ALGORITHM": "HS256",
+    # "SIGNING_KEY": SECRET_KEY,  # default uses Django SECRET_KEY
+
+    # Claims:
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# ---- Production security settings (important) ----
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+# SECURE_BROWSER_XSS_FILTER = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#form-renderer
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
