@@ -180,6 +180,7 @@ dependencies = [
     "django-redis==6.0.0",
     "django-storages[s3]==1.14.6",
     "djangorestframework==3.16.1",
+    "djangorestframework-simplejwt>=5.5.1",
     "drf-spectacular==0.29.0",
     "gunicorn==25.1.0",
     "hiredis==3.3.0",
