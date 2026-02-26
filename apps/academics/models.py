@@ -8,6 +8,16 @@ from apps.common.models import TimeStampedModel
 from apps.common.public_ids import student_public_id, teacher_public_id
 
 
+class Weekday(models.IntegerChoices):
+    MON = 1, "Mon"
+    TUE = 2, "Tue"
+    WED = 3, "Wed"
+    THU = 4, "Thu"
+    FRI = 5, "Fri"
+    SAT = 6, "Sat"
+    SUN = 7, "Sun"
+
+
 class BatchStatus(models.TextChoices):
     ACTIVE = "ACTIVE", "Active"
     ARCHIVED = "ARCHIVED", "Archived"
@@ -25,7 +35,7 @@ class Batch(TimeStampedModel):
     # optional attendance window
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
-    days_of_week = models.CharField(max_length=20, blank=True)  # "Mon,Tue,Wed"
+    # days_of_week moved to BatchScheduleDay (structured, queryable)
 
     class Meta:
         db_table = "acad_batch"
@@ -36,6 +46,28 @@ class Batch(TimeStampedModel):
             models.Index(fields=["organisation", "branch", "status"]),
             models.Index(fields=["branch", "status"]),
         ]
+
+
+class BatchScheduleDay(models.Model):
+    """
+    Stores which weekdays a batch runs on.
+    Replaces the old days_of_week CSV CharField on Batch.
+    One row per (batch, weekday) — queryable and validated.
+    """
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="schedule_days")
+    weekday = models.PositiveSmallIntegerField(choices=Weekday.choices, db_index=True)
+
+    class Meta:
+        db_table = "acad_batch_schedule_day"
+        constraints = [
+            models.UniqueConstraint(fields=["batch", "weekday"], name="uq_batch_schedule_day"),
+        ]
+        indexes = [
+            models.Index(fields=["batch", "weekday"]),
+        ]
+
+    def __str__(self):
+        return f"{self.batch_id} — {self.get_weekday_display()}"
 
 
 class TeacherProfile(TimeStampedModel):
@@ -144,16 +176,6 @@ class BatchEnrollment(TimeStampedModel):
             models.Index(fields=["batch", "status"]),
             models.Index(fields=["student", "status"]),
         ]
-
-
-class Weekday(models.IntegerChoices):
-    MON = 1, "Mon"
-    TUE = 2, "Tue"
-    WED = 3, "Wed"
-    THU = 4, "Thu"
-    FRI = 5, "Fri"
-    SAT = 6, "Sat"
-    SUN = 7, "Sun"
 
 
 class Subject(TimeStampedModel):

@@ -89,7 +89,12 @@ class FeeInvoice(TimeStampedModel):
     class Meta:
         db_table = "bill_fee_invoice"
         constraints = [
-            models.UniqueConstraint(fields=["student", "period_year", "period_month"], name="uq_student_invoice_period"),
+            # Per-batch billing: a student can have one invoice per batch per period.
+            # If batch is NULL (branch-level invoice), only one such invoice per student per period is allowed.
+            models.UniqueConstraint(
+                fields=["student", "batch", "period_year", "period_month"],
+                name="uq_student_batch_invoice_period",
+            ),
         ]
         indexes = [
             models.Index(fields=["branch", "status", "due_date"]),
