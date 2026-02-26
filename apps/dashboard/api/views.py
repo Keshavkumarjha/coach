@@ -32,8 +32,8 @@ from rest_framework.views import APIView
 
 from apps.common.permissions import IsBranchAdmin
 from apps.common.tenant import get_tenant_context
-from apps.api.dashboard.serializers import DashboardResponseSerializer
-from apps.api.dashboard.service import DashboardService
+from .serializers import DashboardResponseSerializer
+from .services import DashboardService
 
 
 class AdminDashboardView(APIView):
