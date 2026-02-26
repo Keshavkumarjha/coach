@@ -1447,5 +1447,13 @@
     <script src="{% static 'js/dashboard.js' %}"></script>
      <script src="{% static 'js/admin.js' %}"></script> 
     <script src="{% static 'js/utils.js' %}"></script>
+
+    
 </body>
+
+<script>
+  if (!localStorage.getItem("access_token")) {
+    window.location.href = "/login/";
+  }
+</script>
 </html>

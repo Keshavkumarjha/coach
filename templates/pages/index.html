@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -383,11 +384,11 @@
         </a>
 
         <div class="nav-links">
-            <a href="dashboard.html">Dashboard</a>
+            <a href="{% url 'dashboard' %}" >Dashboard</a>
             <a href="student.html">Student</a>
             <a href="teacher.html">Teacher</a>
             <a href="#faq">FAQ</a>
-            <a href="#" class="btn-login">Login</a>
+            <a href="{% url 'login' %}" class="btn-login">Login</a>
         </div>
     </nav>
 
@@ -415,14 +416,16 @@
                     <h3>Admin / Teacher Login</h3>
                     <p>Access your dashboard securely</p>
                 </div>
-                <form>
+                <form id="loginForm">
                     <div class="input-group">
-                        <input type="text" placeholder="Institute ID or Phone">
+                    <input type="text" id="mobile" placeholder="Institute ID or Phone" required>
                     </div>
                     <div class="input-group">
-                        <input type="password" placeholder="Password">
+                        <input type="password" id="password" placeholder="Password" required>
                     </div>
-                    <button type="button" class="btn-login-full">Login to Dashboard</button>
+
+                    <button type="submit" class="btn-login-full">Login to Dashboard</button>
+                    <p id="loginMsg" style="margin-top:10px;color:white;"></p>
                 </form>
             </div>
         </div>
@@ -1048,4 +1051,47 @@
         }
     </script>
 </body>
+<script>
+  const LOGIN_API = "http://localhost:8000/api/auth/login/"; // <-- update if needed
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      mobile: document.getElementById("mobile").value.trim(),
+      password: document.getElementById("password").value
+    };
+
+    const msg = document.getElementById("loginMsg");
+    msg.textContent = "Logging in...";
+
+    try {
+      const res = await fetch(LOGIN_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // DRF usually returns {field: ["error"]}
+        msg.textContent = JSON.stringify(data);
+        return;
+      }
+
+      // ✅ save tokens (your signup response shows these keys)
+      localStorage.setItem("access_token", data.access);
+      localStorage.setItem("refresh_token", data.refresh);
+
+      msg.textContent = "Login successful! Redirecting...";
+
+      // ✅ redirect to dashboard page (change to your actual URL)
+      window.location.href = "/dashboard/";
+
+    } catch (err) {
+      msg.textContent = "Network error: " + err.message;
+    }
+  });
+</script>
 </html>

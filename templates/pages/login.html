@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Org Signup</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; max-width: 520px; margin: 0 auto; }
+    label { display:block; margin-top: 12px; font-weight: 600; }
+    input { width:100%; padding:10px; margin-top:6px; box-sizing:border-box; }
+    button { margin-top: 16px; padding: 10px 14px; width: 100%; cursor: pointer; }
+    .error { color: #b00020; margin-top: 10px; white-space: pre-wrap; }
+    .success { color: #0a7a0a; margin-top: 10px; white-space: pre-wrap; }
+    .small { color:#666; font-size: 12px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Organization Signup</h1>
+
+  <form id="signupForm">
+    <label for="org_name">Organization Name</label>
+    <input id="org_name" name="org_name" type="text" placeholder="e.g. Coach Academy" required />
+
+    <label for="owner_name">Owner Name</label>
+    <input id="owner_name" name="owner_name" type="text" placeholder="e.g. Keshav Kumar" required />
+
+    <label for="mobile">Mobile</label>
+    <input id="mobile" name="mobile" type="tel" placeholder="e.g. 9876543210" required />
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" placeholder="••••••••" required />
+    <div class="small">Make sure your API password rules are satisfied.</div>
+
+    <button type="submit">Sign Up</button>
+  </form>
+
+  <div id="msg"></div>
+
+  <script>
+    const API_URL = "http://localhost:8000/api/auth/org-signup/";
+    const form = document.getElementById("signupForm");
+    const msg = document.getElementById("msg");
+
+    function showMessage(text, type = "error") {
+      msg.className = type;
+      msg.textContent = text;
+    }
+
+    // Convert DRF error response into readable text:
+    function formatErrors(data) {
+      // data usually looks like: { field: ["msg1", "msg2"], non_field_errors: [...] }
+      let out = [];
+      for (const [key, val] of Object.entries(data || {})) {
+        if (Array.isArray(val)) out.push(`${key}: ${val.join(", ")}`);
+        else if (typeof val === "string") out.push(`${key}: ${val}`);
+        else out.push(`${key}: ${JSON.stringify(val)}`);
+      }
+      return out.length ? out.join("\n") : "Something went wrong.";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      showMessage("", "error");
+
+      const payload = {
+        org_name: document.getElementById("org_name").value.trim(),
+        owner_name: document.getElementById("owner_name").value.trim(),
+        mobile: document.getElementById("mobile").value.trim(),
+        password: document.getElementById("password").value
+      };
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          // DRF validation errors
+          showMessage(formatErrors(data), "error");
+          return;
+        }
+
+        // Success: show response (token/user/etc.)
+        showMessage("Signup successful!\n" + JSON.stringify(data, null, 2), "success");
+
+        // OPTIONAL: if your API returns tokens, store them:
+        // localStorage.setItem("access", data.access);
+        // localStorage.setItem("refresh", data.refresh);
+
+        form.reset();
+      } catch (err) {
+        showMessage("Network error: " + err.message, "error");
+      }
+    });
+  </script>
+</body>
+</html>
