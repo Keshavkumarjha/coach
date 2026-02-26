@@ -4,9 +4,9 @@ from apps.accounts.api.views import (
 )
 
 urlpatterns = [
-    path("auth/org-signup/", OrgSignupView.as_view()),
-    path("auth/login/", LoginView.as_view()),
-    path("auth/branch-join/", BranchJoinRequestView.as_view()),
-    path("auth/forgot-password/", ForgotPasswordView.as_view()),
-    path("auth/reset-password/", ResetPasswordView.as_view()),
+    path("org-signup/", OrgSignupView.as_view()),
+    path("login/", LoginView.as_view()),
+    path("branch-join/", BranchJoinRequestView.as_view()),
+    path("forgot-password/", ForgotPasswordView.as_view()),
+    path("reset-password/", ResetPasswordView.as_view()),
 ]
