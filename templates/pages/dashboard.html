@@ -1,0 +1,1451 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoachMaster - Ultimate Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0">CoachMaster</h5>
+                    <small class="text-muted">Super Admin</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-body">
+            <ul class="nav nav-pills flex-column mb-3" id="sidebarMenu">
+                <!-- Main -->
+                <li class="nav-section">Main</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" data-page="dashboard">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+
+                <!-- Institute Setup -->
+                <li class="nav-section">Institute Setup</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="branches">
+                        <i class="bi bi-building"></i> Branch Manager
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="batches">
+                        <i class="bi bi-bookmark"></i> Batch Manager
+                    </a>
+                </li>
+
+                <!-- People -->
+                <li class="nav-section">People</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="students">
+                        <i class="bi bi-people"></i> Students
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="teachers">
+                        <i class="bi bi-person-workspace"></i> Teachers & Staff
+                    </a>
+                </li>
+
+                <!-- Academics -->
+                <li class="nav-section">Academics</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="attendance">
+                        <i class="bi bi-clipboard-check"></i> Attendance
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="homework">
+                        <i class="bi bi-book"></i> Homework / Tests
+                    </a>
+                </li>
+
+                <!-- Finance -->
+                <li class="nav-section">Finance</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="fees">
+                        <i class="bi bi-credit-card"></i> Fee Manager
+                        <span class="badge bg-danger ms-2">3</span>
+                    </a>
+                </li>
+
+                <!-- Communication -->
+                <li class="nav-section">Communication</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="announcements">
+                        <i class="bi bi-megaphone"></i> Announcements
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="marketing">
+                        <i class="bi bi-chat-dots"></i> WhatsApp Marketing
+                    </a>
+                </li>
+
+                <!-- Reviews & Feedback -->
+                <li class="nav-section">Reviews</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="reviews">
+                        <i class="bi bi-star"></i> Reviews & Ratings
+                    </a>
+                </li>
+
+                <!-- Tools -->
+                <li class="nav-section">Tools</li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-page="idcards">
+                        <i class="bi bi-card-text"></i> ID Card Generator
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer p-3 border-top">
+            <div class="d-flex align-items-center gap-2">
+                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <small class="d-block text-light">Admin</small>
+                    <small class="text-muted">Logged In</small>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h6 class="mb-0">Admin Dashboard</h6>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Branch Selector -->
+                <select class="form-select form-select-sm branch-selector">
+                    <option>All Branches</option>
+                    <option>Main Center (Patna)</option>
+                    <option>City Branch (Lucknow)</option>
+                </select>
+
+                <!-- Notifications -->
+                <div class="position-relative">
+                    <button class="btn btn-sm btn-outline-secondary position-relative">
+                        <i class="bi bi-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge bg-danger rounded-pill">2</span>
+                    </button>
+                </div>
+
+                <!-- Dark Mode Toggle -->
+                <button class="btn btn-sm btn-outline-secondary" id="darkModeToggle" title="Toggle Dark Mode">
+                    <i class="bi bi-moon"></i>
+                </button>
+
+                <!-- Quick Add -->
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#quickAddModal">
+                    <i class="bi bi-plus-circle"></i> Quick Add
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <main class="content-area">
+
+            <!-- ============ DASHBOARD PAGE ============ -->
+            <div class="page-section active" id="page-dashboard">
+                <!-- KPI Cards -->
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Total Revenue</p>
+                                        <h4 class="mb-0">₹4.5 L</h4>
+                                        <small class="text-success"><i class="bi bi-arrow-up"></i> +12% This Month</small>
+                                    </div>
+                                    <div class="icon-box bg-primary text-white rounded-3">
+                                        <i class="bi bi-currency-rupee"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Total Students</p>
+                                        <h4 class="mb-0">1,250</h4>
+                                        <small class="text-success"><i class="bi bi-arrow-up"></i> +45 New</small>
+                                    </div>
+                                    <div class="icon-box bg-info text-white rounded-3">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Active Batches</p>
+                                        <h4 class="mb-0">45</h4>
+                                        <small class="text-warning"><i class="bi bi-clock"></i> 3 Pending</small>
+                                    </div>
+                                    <div class="icon-box bg-warning text-white rounded-3">
+                                        <i class="bi bi-bookmark"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Pending Approvals</p>
+                                        <h4 class="mb-0">3</h4>
+                                        <small class="text-danger"><i class="bi bi-exclamation-circle"></i> Urgent</small>
+                                    </div>
+                                    <div class="icon-box bg-danger text-white rounded-3">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row mb-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Revenue Trend (Last 30 Days)</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="revenueChart" height="80"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Revenue by Batch</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="batchChart" height="80"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Pending Approvals -->
+                <div class="row mb-4">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Quick Actions</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                        <i class="bi bi-credit-card"></i> Record Payment
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                                        <i class="bi bi-megaphone"></i> Send Notice
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#attendanceModal">
+                                        <i class="bi bi-clipboard-check"></i> Mark Attendance
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Pending Fee Approvals (UPI)</h6>
+                                <span class="badge bg-danger">3</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Batch</th>
+                                            <th>Amount</th>
+                                            <th>Screenshot</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="avatar-sm bg-primary text-white rounded-circle">RK</div>
+                                                    <span>Rahul Kumar</span>
+                                                </div>
+                                            </td>
+                                            <td>Xth Science</td>
+                                            <td class="fw-bold">₹5,000</td>
+                                            <td><button class="btn btn-sm btn-outline-secondary">View</button></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-success">Approve</button>
+                                                <button class="btn btn-sm btn-danger">Reject</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ BATCHES PAGE ============ -->
+            <div class="page-section" id="page-batches">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Batch Management</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#batchModal">
+                        <i class="bi bi-plus-circle"></i> Create New Batch
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="batchTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Batch Name</th>
+                                    <th>Branch</th>
+                                    <th>Timing</th>
+                                    <th>Teacher</th>
+                                    <th>Fees</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Xth Science A</strong></td>
+                                    <td>Patna Main</td>
+                                    <td>07:00 AM - 08:30 AM</td>
+                                    <td>Rajesh Sir</td>
+                                    <td class="fw-bold">₹1,000/mo</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="bi bi-megaphone"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>XIIth Commerce</strong></td>
+                                    <td>Lucknow</td>
+                                    <td>04:00 PM - 05:30 PM</td>
+                                    <td>Anita Ma'am</td>
+                                    <td class="fw-bold">₹1,200/mo</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="bi bi-megaphone"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ BRANCHES PAGE ============ -->
+            <div class="page-section" id="page-branches">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Branch Network</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#branchModal">
+                        <i class="bi bi-plus-circle"></i> Add Branch
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card branch-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="mb-1">Main Center</h6>
+                                        <p class="text-muted mb-0"><i class="bi bi-geo-alt"></i> Raja Bazaar, Patna</p>
+                                    </div>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="p-2 bg-light rounded">
+                                            <small class="text-muted">Students</small>
+                                            <p class="mb-0 fw-bold">500</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 bg-light rounded">
+                                            <small class="text-muted">Revenue</small>
+                                            <p class="mb-0 fw-bold">₹25L</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary flex-grow-1">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary flex-grow-1">
+                                        <i class="bi bi-speedometer2"></i> Dashboard
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ STUDENTS PAGE ============ -->
+            <div class="page-section" id="page-students">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Student Directory</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#studentModal">
+                        <i class="bi bi-plus-circle"></i> Add Student
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light border-bottom">
+                        <input type="text" class="form-control form-control-sm" placeholder="Search students..." id="studentSearch">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Branch</th>
+                                    <th>Batch</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle">R</div>
+                                            <span>Rahul Kumar</span>
+                                        </div>
+                                    </td>
+                                    <td>Patna</td>
+                                    <td>Xth Science</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-secondary">Edit</button>
+                                            <button class="btn btn-outline-danger">Deactivate</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-sm bg-info text-white rounded-circle">P</div>
+                                            <span>Priya Singh</span>
+                                        </div>
+                                    </td>
+                                    <td>Lucknow</td>
+                                    <td>XIIth Commerce</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-secondary">Edit</button>
+                                            <button class="btn btn-outline-danger">Deactivate</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ TEACHERS PAGE ============ -->
+            <div class="page-section" id="page-teachers">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Staff Management</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#teacherModal">
+                        <i class="bi bi-plus-circle"></i> Add Teacher
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Staff List</h6>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Subject</th>
+                                            <th>Branch</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Rajesh Sir</td>
+                                            <td>Maths</td>
+                                            <td>Patna</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Leave Requests</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info mb-3" role="alert">
+                                    <strong>Anita Ma'am</strong> - Tomorrow
+                                    <br><small>Reason: Personal work</small>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-success me-2">Accept</button>
+                                        <button class="btn btn-sm btn-danger">Reject</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ ATTENDANCE PAGE ============ -->
+            <div class="page-section" id="page-attendance">
+                <h5 class="mb-4">Mark Attendance</h5>
+
+                <div class="row">
+                    <div class="col-lg-3 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <label class="form-label">Select Batch</label>
+                                <select class="form-select form-select-sm">
+                                    <option>Xth Science</option>
+                                    <option>XIIth Commerce</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light border-bottom">
+                        <h6 class="mb-0">Student Attendance</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Rahul Kumar</td>
+                                    <td>+91-98765...</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <input type="radio" class="btn-check" name="status1" id="present1" checked>
+                                            <label class="btn btn-outline-success" for="present1">Present</label>
+                                            <input type="radio" class="btn-check" name="status1" id="absent1">
+                                            <label class="btn btn-outline-danger" for="absent1">Absent</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Priya Sharma</td>
+                                    <td>+91-99887...</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <input type="radio" class="btn-check" name="status2" id="present2" checked>
+                                            <label class="btn btn-outline-success" for="present2">Present</label>
+                                            <input type="radio" class="btn-check" name="status2" id="absent2">
+                                            <label class="btn btn-outline-danger" for="absent2">Absent</label>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Save Attendance
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ FEES PAGE ============ -->
+            <div class="page-section" id="page-fees">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Finance Center</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-gear"></i> Payment Settings
+                        </button>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                            <i class="bi bi-plus-circle"></i> Add Manual Payment
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-light border-bottom">
+                        <h6 class="mb-0">Recent Transactions</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Amount</th>
+                                    <th>Mode</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle">R</div>
+                                            <span>Rahul</span>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold">₹5,000</td>
+                                    <td><span class="badge bg-info">UPI</span></td>
+                                    <td><span class="badge bg-success">Verified</span></td>
+                                    <td>20 Oct 2023</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-sm bg-info text-white rounded-circle">P</div>
+                                            <span>Priya</span>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold">₹2,500</td>
+                                    <td><span class="badge bg-warning">Cash</span></td>
+                                    <td><span class="badge bg-success">Received</span></td>
+                                    <td>19 Oct 2023</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ HOMEWORK PAGE ============ -->
+            <div class="page-section" id="page-homework">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Homework & Tests</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#homeworkModal">
+                        <i class="bi bi-plus-circle"></i> Add New
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Batch</th>
+                                    <th>Type</th>
+                                    <th>Due Date</th>
+                                    <th>Results</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Physics Numericals</td>
+                                    <td>Xth Science</td>
+                                    <td><span class="badge bg-info">Homework</span></td>
+                                    <td>25 Oct</td>
+                                    <td>--</td>
+                                </tr>
+                                <tr>
+                                    <td>Unit Test 1</td>
+                                    <td>XIIth Commerce</td>
+                                    <td><span class="badge bg-warning">Test</span></td>
+                                    <td>20 Oct</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">Add Results</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ ANNOUNCEMENTS PAGE ============ -->
+            <div class="page-section" id="page-announcements">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Announcements</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                        <i class="bi bi-plus-circle"></i> Send New
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Target</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Diwali Holiday</td>
+                                    <td>All Branches</td>
+                                    <td><span class="badge bg-success">Today</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Class Cancelled</td>
+                                    <td>Xth Science (Batch A)</td>
+                                    <td><span class="badge bg-secondary">Yesterday</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ MARKETING PAGE ============ -->
+            <div class="page-section" id="page-marketing">
+                <h5 class="mb-4">WhatsApp Campaign</h5>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label">Target Audience</label>
+                            <div>
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="audience" id="audience1" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="audience1">All Students</label>
+                                    <input type="radio" class="btn-check" name="audience" id="audience2">
+                                    <label class="btn btn-outline-primary btn-sm" for="audience2">All Parents</label>
+                                    <input type="radio" class="btn-check" name="audience" id="audience3">
+                                    <label class="btn btn-outline-primary btn-sm" for="audience3">Defaulters</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Message Template</label>
+                            <textarea class="form-control" rows="4" placeholder="Enter your WhatsApp message..."></textarea>
+                        </div>
+
+                        <button class="btn btn-success">
+                            <i class="bi bi-send"></i> Start Campaign
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ ID CARDS PAGE ============ -->
+            <div class="page-section" id="page-idcards">
+                <h5 class="mb-4">ID Card Generator</h5>
+
+                <div class="row">
+                    <div class="col-lg-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Select User</label>
+                                    <select class="form-select">
+                                        <option>Rahul Kumar (Student)</option>
+                                        <option>Rajesh Sir (Teacher)</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary w-100">
+                                    <i class="bi bi-file-pdf"></i> Generate Card
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="id-card">
+                            <div class="card-body text-center">
+                                <h6 class="mb-3" style="color: #4F46E5;">CoachMaster</h6>
+                                <div class="id-photo mx-auto mb-3">
+                                    <i class="bi bi-person-fill" style="font-size: 2rem; color: #999;"></i>
+                                </div>
+                                <h6 class="mb-1">Rahul Kumar</h6>
+                                <p class="text-muted mb-3">Student | Xth Science</p>
+                                <p class="mb-0"><strong>ID: STU-001</strong></p>
+                                <button class="btn btn-sm btn-outline-primary mt-3 w-100">
+                                    <i class="bi bi-printer"></i> Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ REVIEWS PAGE ============ -->
+            <div class="page-section" id="page-reviews">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>Reviews & Ratings Management</h5>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="reviewType" id="teacherReviews" value="teacher" checked>
+                        <label class="btn btn-outline-primary btn-sm" for="teacherReviews">
+                            <i class="bi bi-person"></i> Teacher Reviews
+                        </label>
+                        <input type="radio" class="btn-check" name="reviewType" id="batchReviews" value="batch">
+                        <label class="btn btn-outline-primary btn-sm" for="batchReviews">
+                            <i class="bi bi-bookmark"></i> Batch Reviews
+                        </label>
+                        <input type="radio" class="btn-check" name="reviewType" id="feedbackReviews" value="feedback">
+                        <label class="btn btn-outline-primary btn-sm" for="feedbackReviews">
+                            <i class="bi bi-chat-dots"></i> Student Feedback
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Reviews Stats -->
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Average Rating</p>
+                                        <h4 class="mb-0">4.8<small>/5</small></h4>
+                                        <small class="text-warning"><i class="bi bi-star-fill"></i> Excellent</small>
+                                    </div>
+                                    <div class="icon-box bg-warning text-white rounded-3">
+                                        <i class="bi bi-star"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Total Reviews</p>
+                                        <h4 class="mb-0">342</h4>
+                                        <small class="text-info"><i class="bi bi-arrow-up"></i> +25 This Month</small>
+                                    </div>
+                                    <div class="icon-box bg-info text-white rounded-3">
+                                        <i class="bi bi-chat-quote"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Pending Reviews</p>
+                                        <h4 class="mb-0">18</h4>
+                                        <small class="text-warning"><i class="bi bi-clock"></i> Needs Approval</small>
+                                    </div>
+                                    <div class="icon-box bg-warning text-white rounded-3">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="card kpi-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="text-muted mb-1">Positive Reviews</p>
+                                        <h4 class="mb-0">94%</h4>
+                                        <small class="text-success"><i class="bi bi-check-circle"></i> Satisfied</small>
+                                    </div>
+                                    <div class="icon-box bg-success text-white rounded-3">
+                                        <i class="bi bi-hand-thumbs-up"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teacher Reviews List -->
+                <div class="card">
+                    <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Teacher & Staff Reviews</h6>
+                        <button class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Review Item 1 -->
+                        <div class="border-bottom p-4 review-item">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex gap-3 flex-grow-1">
+                                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                        RS
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h6 class="mb-1">Rajesh Sir</h6>
+                                                <small class="text-muted">Mathematics Teacher | Xth Science Batch A</small>
+                                            </div>
+                                            <div class="review-rating">
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-star-fill"></i> 4.8
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <span class="badge bg-light text-dark">Teaching: 5⭐</span>
+                                            <span class="badge bg-light text-dark">Communication: 4⭐</span>
+                                            <span class="badge bg-light text-dark">Punctuality: 5⭐</span>
+                                        </div>
+                                        <p class="text-muted mb-2">
+                                            "Excellent teaching methodology. Very clear with concepts and always available for doubts. Students love his classes!"
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Reviewed by: Priya Singh (Parent) • 5 days ago</small>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-success" title="Approve">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Reject">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Review Item 2 -->
+                        <div class="border-bottom p-4 review-item">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex gap-3 flex-grow-1">
+                                    <div class="avatar bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                        AM
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h6 class="mb-1">Anita Ma'am</h6>
+                                                <small class="text-muted">Commerce Teacher | XIIth Commerce Batch</small>
+                                            </div>
+                                            <div class="review-rating">
+                                                <span class="badge bg-success text-white">
+                                                    <i class="bi bi-star-fill"></i> 4.5
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <span class="badge bg-light text-dark">Teaching: 4⭐</span>
+                                            <span class="badge bg-light text-dark">Communication: 5⭐</span>
+                                            <span class="badge bg-light text-dark">Punctuality: 4⭐</span>
+                                        </div>
+                                        <p class="text-muted mb-2">
+                                            "Very friendly and approachable. Great at explaining complex topics. Would appreciate more homework guidance."
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Reviewed by: Rahul Kumar (Student) • 3 days ago</small>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-success" title="Approve">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Reject">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Review Item 3 - Pending -->
+                        <div class="border-bottom p-4 review-item review-pending">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex gap-3 flex-grow-1">
+                                    <div class="avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; flex-shrink: 0;">
+                                        VK
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <h6 class="mb-1">Vikram Kumar</h6>
+                                                <small class="text-muted">Physics Teacher | Xth Science Batch B</small>
+                                            </div>
+                                            <div class="review-rating">
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-clock"></i> Pending
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mb-2">
+                                            <span class="badge bg-light text-dark">Teaching: 5⭐</span>
+                                            <span class="badge bg-light text-dark">Communication: 4⭐</span>
+                                            <span class="badge bg-light text-dark">Punctuality: 3⭐</span>
+                                        </div>
+                                        <p class="text-muted mb-2">
+                                            "Good content delivery but sometimes classes start late. Overall satisfied with the teaching quality."
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Reviewed by: Akshay Patel (Student) • 1 hour ago</small>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-success" title="Approve">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Reject">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rating Chart -->
+                <div class="row mt-4">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Rating Distribution</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="ratingChart" height="80"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header bg-light border-bottom">
+                                <h6 class="mb-0">Review Sentiment Analysis</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-success">Positive</span>
+                                        <span class="fw-bold">94%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 94%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-warning">Neutral</span>
+                                        <span class="fw-bold">4%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" style="width: 4%"></div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-danger">Negative</span>
+                                        <span class="fw-bold">2%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-danger" style="width: 2%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ============ MODALS ============ -->
+
+    <!-- Batch Modal -->
+    <div class="modal fade" id="batchModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Batch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Batch Name</label>
+                        <input type="text" class="form-control" placeholder="Enter batch name">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Branch</label>
+                            <select class="form-select">
+                                <option>Main Center</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Monthly Fee</label>
+                            <input type="number" class="form-control" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" class="form-control">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">End Time</label>
+                            <input type="time" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assign Teacher</label>
+                        <select class="form-select">
+                            <option>Rajesh Sir</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save Batch</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Modal -->
+    <div class="modal fade" id="studentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Branch</label>
+                            <select class="form-select">
+                                <option>Main Center</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Batch</label>
+                            <select class="form-select">
+                                <option>Xth Science</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Modal -->
+    <div class="modal fade" id="teacherModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Teacher</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assign Branch</label>
+                        <select class="form-select">
+                            <option>All Branches</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Manual Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Student</label>
+                        <select class="form-select">
+                            <option>Rahul Kumar</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Amount</label>
+                            <input type="number" class="form-control" placeholder="0">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Payment Mode</label>
+                            <select class="form-select">
+                                <option>Cash</option>
+                                <option>Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="modal fade" id="announcementModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Announcement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Target</label>
+                        <select class="form-select">
+                            <option>All Branches</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-control" rows="4" placeholder="Enter announcement..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Send Notification</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Homework Modal -->
+    <div class="modal fade" id="homeworkModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Homework / Test</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select">
+                                <option>Homework</option>
+                                <option>Test</option>
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Batch</label>
+                            <select class="form-select">
+                                <option>Xth Science</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" placeholder="Enter title">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Instructions</label>
+                        <textarea class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Modal -->
+    <div class="modal fade" id="quickAddModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Quick Add</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person-plus"></i> Add Student
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person-workspace"></i> Add Teacher
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="bi bi-bookmark"></i> Create Batch
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <i class="bi bi-credit-card"></i> Record Payment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Response Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Respond to Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <strong>Review Summary</strong>
+                        <p class="mb-0 mt-2">
+                            <em>"Excellent teaching methodology. Very clear with concepts and always available for doubts."</em>
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Response</label>
+                        <textarea class="form-control" rows="4" placeholder="Write a response to this review..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Action</label>
+                        <select class="form-select">
+                            <option value="approve">Approve & Publish</option>
+                            <option value="feature">Approve & Feature</option>
+                            <option value="reject">Reject Review</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Send Response</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts -->
+    <script src="{% static 'js/dashboard.js' %}"></script>
+     <script src="{% static 'js/admin.js' %}"></script> 
+    <script src="{% static 'js/utils.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeachConnect - Teacher Mobile App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --primary-light: #EEF2FF;
+            --secondary: #10B981;
+            --secondary-light: #DCFCE7;
+            --accent: #F59E0B;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            --bg-color: #F8FAFC;
+            --surface: #FFFFFF;
+            --text-main: #1E293B;
+            --text-sec: #64748B;
+            --border: #E2E8F0;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-card: 0 2px 4px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .phone-frame {
+            width: 390px;
+            height: 844px;
+            background: var(--bg-color);
+            border-radius: 40px;
+            overflow: hidden;
+            border: 10px solid #1a1a1a;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .status-bar {
+            height: 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 25px 20px 30px;
+            color: white;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .user-info h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: white;
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .header-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            padding: 12px 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 80px 20px;
+            margin-top: -10px;
+            position: relative;
+            z-index: 20;
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .screen {
+            display: none;
+            padding-top: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Action Cards */
+        .action-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow-card);
+            border-left: 5px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .action-card.completed {
+            border-left-color: var(--secondary);
+            opacity: 0.8;
+        }
+
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .time-badge {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .status-ongoing {
+            color: var(--secondary);
+        }
+
+        .status-completed {
+            color: var(--text-sec);
+        }
+
+        .action-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .action-details {
+            font-size: 12px;
+            color: var(--text-sec);
+            margin-bottom: 14px;
+        }
+
+        /* List Items */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--bg-color);
+            transition: var(--transition);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item:hover {
+            background: var(--bg-color);
+            padding-left: 8px;
+            padding-right: 8px;
+            border-radius: 8px;
+            margin: 0 -8px;
+        }
+
+        .list-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .list-content h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .list-content p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: var(--text-sec);
+        }
+
+        .list-action {
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .list-action:hover {
+            transform: translateX(4px);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-success:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            width: auto;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        /* Toggle */
+        .toggle-container {
+            display: flex;
+            background: var(--bg-color);
+            border-radius: 10px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .toggle-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text-sec);
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .toggle-btn.active-p {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .toggle-btn.active-a {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Student Row */
+        .student-row {
+            background: var(--surface);
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .student-row:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .student-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .student-details h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .student-details p {
+            margin: 2px 0 0 0;
+            font-size: 11px;
+            color: var(--text-sec);
+        }
+
+        /* Tabs */
+        .tab-pills {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .tab-pills::-webkit-scrollbar {
+            height: 3px;
+        }
+
+        .pill {
+            padding: 8px 16px;
+            background: var(--surface);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-sec);
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .pill:hover {
+            border-color: var(--primary);
+        }
+
+        .pill.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Profile */
+        .profile-header {
+            text-align: center;
+            padding: 25px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+        }
+
+        .profile-img {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 800;
+            margin: 0 auto 15px;
+            border: 4px solid var(--primary-light);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .profile-header h3 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .profile-header p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-sec);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            z-index: 1000;
+            align-items: flex-end;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            border-radius: 24px 24px 0 0;
+            padding: 25px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-sec);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-color);
+        }
+
+        .close-btn:hover {
+            background: var(--border);
+            transform: rotate(90deg);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: white;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-sec);
+            transition: var(--transition);
+            width: 20%;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            transform: scale(1.1);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 6px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-main);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-primary {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .badge-success {
+            background: var(--secondary-light);
+            color: var(--secondary);
+        }
+
+        .badge-danger {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 15px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 0 10px 0;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .section-action {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-frame">
+    
+    <div class="status-bar">
+        <span>9:41</span>
+        <div style="display: flex; gap: 5px;">
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <div class="app-header">
+        <div class="header-top">
+            <div class="user-info">
+                <p>Good Morning,</p>
+                <h2>Rajesh Sir 👋</h2>
+            </div>
+            <button class="header-btn" onclick="app.showNotifications()">
+                <i class="fas fa-bell"></i>
+            </button>
+        </div>
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Classes Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">85</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- HOME SCREEN -->
+        <div id="home-screen" class="screen active">
+            <div class="card-title">TODAY'S SCHEDULE</div>
+
+            <div class="action-card">
+                <div class="action-header">
+                    <span class="time-badge"><i class="fas fa-clock"></i> 09:00 AM</span>
+                    <span class="status-badge status-ongoing">Ongoing</span>
+                </div>
+                <div class="action-title">Mathematics - Xth A</div>
+                <div class="action-details"><i class="fas fa-door-open"></i> Room 101 • 45 Students</div>
+                <button class="btn btn-primary" onclick="app.goToScreen('attendance')">
+                    <i class="fas fa-clipboard-list"></i> Mark Attendance
+                </button>
+            </div>
+
+            <div class="action-card completed">
+                <div class="action-header">
+                    <span class="time-badge" style="background: var(--secondary-light); color: var(--secondary);">
+                        <i class="fas fa-check-circle"></i> 11:00 AM
+                    </span>
+                    <span class="status-badge status-completed">Completed</span>
+                </div>
+                <div class="action-title">Science - XIIth B</div>
+                <div class="action-details"><i class="fas fa-flask"></i> Lab 2</div>
+                <button class="btn btn-secondary" onclick="app.showToast('Viewing class report...')">
+                    <i class="fas fa-chart-bar"></i> View Report
+                </button>
+            </div>
+
+            <div class="card-title" style="margin-top: 20px;">QUICK ACTIONS</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <button class="btn btn-secondary" onclick="app.openModal('homeworkModal')" style="height: 100px; flex-direction: column; justify-content: center;">
+                    <i class="fas fa-file-alt" style="font-size: 20px;"></i>
+                    <span>Assign Homework</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openModal('marksModal')" style="height: 100px; flex-direction: column; justify-content: center;">
+                    <i class="fas fa-chart-line" style="font-size: 20px;"></i>
+                    <span>Enter Marks</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openModal('testModal')" style="height: 100px; flex-direction: column; justify-content: center;">
+                    <i class="fas fa-pen-fancy" style="font-size: 20px;"></i>
+                    <span>Create Test</span>
+                </button>
+                <button class="btn btn-secondary" onclick="app.openModal('announcementModal')" style="height: 100px; flex-direction: column; justify-content: center;">
+                    <i class="fas fa-bullhorn" style="font-size: 20px;"></i>
+                    <span>Announcement</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ATTENDANCE SCREEN -->
+        <div id="attendance-screen" class="screen">
+            <div class="section-header">
+                <div class="section-title">Mark Attendance</div>
+                <div class="section-action" onclick="app.markAllPresent()">All Present</div>
+            </div>
+
+            <div class="tab-pills">
+                <div class="pill active" onclick="app.selectBatch(this, 'xth-a')">Xth A</div>
+                <div class="pill" onclick="app.selectBatch(this, 'xii-b')">XIIth B</div>
+                <div class="pill" onclick="app.selectBatch(this, 'xi-c')">XIth C</div>
+            </div>
+
+            <div class="card-title" style="margin-top: 15px;">Students (45)</div>
+
+            <div class="student-row">
+                <div class="student-info">
+                    <div class="student-avatar" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">RK</div>
+                    <div class="student-details">
+                        <h4>Rahul Kumar</h4>
+                        <p>Roll: 01</p>
+                    </div>
+                </div>
+                <div class="toggle-container">
+                    <button class="toggle-btn active-p" onclick="app.toggleAttendance(this, 'p')">P</button>
+                    <button class="toggle-btn" onclick="app.toggleAttendance(this, 'a')">A</button>
+                </div>
+            </div>
+
+            <div class="student-row">
+                <div class="student-info">
+                    <div class="student-avatar" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">PS</div>
+                    <div class="student-details">
+                        <h4>Priya Sharma</h4>
+                        <p>Roll: 02</p>
+                    </div>
+                </div>
+                <div class="toggle-container">
+                    <button class="toggle-btn active-p" onclick="app.toggleAttendance(this, 'p')">P</button>
+                    <button class="toggle-btn" onclick="app.toggleAttendance(this, 'a')">A</button>
+                </div>
+            </div>
+
+            <div class="student-row">
+                <div class="student-info">
+                    <div class="student-avatar" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">AK</div>
+                    <div class="student-details">
+                        <h4>Amit Kumar</h4>
+                        <p>Roll: 03</p>
+                    </div>
+                </div>
+                <div class="toggle-container">
+                    <button class="toggle-btn" onclick="app.toggleAttendance(this, 'p')">P</button>
+                    <button class="toggle-btn active-a" onclick="app.toggleAttendance(this, 'a')">A</button>
+                </div>
+            </div>
+
+            <div class="student-row">
+                <div class="student-info">
+                    <div class="student-avatar" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">VG</div>
+                    <div class="student-details">
+                        <h4>Vedavati Gupta</h4>
+                        <p>Roll: 04</p>
+                    </div>
+                </div>
+                <div class="toggle-container">
+                    <button class="toggle-btn active-p" onclick="app.toggleAttendance(this, 'p')">P</button>
+                    <button class="toggle-btn" onclick="app.toggleAttendance(this, 'a')">A</button>
+                </div>
+            </div>
+
+            <div class="student-row">
+                <div class="student-info">
+                    <div class="student-avatar" style="background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);">SK</div>
+                    <div class="student-details">
+                        <h4>Sneha Kapoor</h4>
+                        <p>Roll: 05</p>
+                    </div>
+                </div>
+                <div class="toggle-container">
+                    <button class="toggle-btn active-p" onclick="app.toggleAttendance(this, 'p')">P</button>
+                    <button class="toggle-btn" onclick="app.toggleAttendance(this, 'a')">A</button>
+                </div>
+            </div>
+
+            <div style="height: 80px;"></div>
+            <button class="btn btn-success" style="position: fixed; bottom: 90px; width: 350px; left: 50%; transform: translateX(-50%); max-width: 85%;" onclick="app.saveAttendance()">
+                <i class="fas fa-save"></i> Save Attendance
+            </button>
+        </div>
+
+        <!-- ACADEMICS SCREEN -->
+        <div id="academics-screen" class="screen">
+            <div class="card-title">Academic Tools</div>
+
+            <div class="tab-pills">
+                <div class="pill active" onclick="app.switchAcademicTab('homework')">Homework</div>
+                <div class="pill" onclick="app.switchAcademicTab('results')">Results</div>
+                <div class="pill" onclick="app.switchAcademicTab('materials')">Materials</div>
+                <div class="pill" onclick="app.switchAcademicTab('tests')">Tests</div>
+            </div>
+
+            <!-- Homework Tab -->
+            <div id="tab-homework">
+                <div class="card">
+                    <div class="list-item">
+                        <div class="list-icon" style="background: var(--primary-light); color: var(--primary);">
+                            <i class="fas fa-clipboard"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Physics Numericals</h4>
+                            <p>Xth A • Due: 20 Nov</p>
+                        </div>
+                        <div class="list-action" onclick="app.editHomework()">Edit</div>
+                    </div>
+
+                    <div class="list-item">
+                        <div class="list-icon" style="background: var(--secondary-light); color: var(--secondary);">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Chemistry Practical</h4>
+                            <p>XIIth B • Due: 22 Nov</p>
+                        </div>
+                        <div class="list-action" onclick="app.editHomework()">Edit</div>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="app.openModal('homeworkModal')">
+                        <i class="fas fa-plus"></i> Add New Homework
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="tab-results" style="display: none;">
+                <div class="card">
+                    <div class="list-item">
+                        <div class="list-icon" style="background: #FEF3C7; color: #D97706;">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Unit Test 1</h4>
+                            <p>Xth A - Mathematics</p>
+                        </div>
+                        <div class="list-action" onclick="app.openModal('marksModal')">Marks</div>
+                    </div>
+
+                    <div class="list-item">
+                        <div class="list-icon" style="background: #E0E7FF; color: #4F46E5;">
+                            <i class="fas fa-pen-fancy"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Mid Semester Exam</h4>
+                            <p>XIIth B - All Subjects</p>
+                        </div>
+                        <div class="list-action" onclick="app.openModal('marksModal')">Marks</div>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="app.openModal('marksModal')">
+                        <i class="fas fa-plus"></i> Enter New Marks
+                    </button>
+                </div>
+            </div>
+
+            <!-- Materials Tab -->
+            <div id="tab-materials" style="display: none;">
+                <div class="card">
+                    <div class="list-item">
+                        <div class="list-icon" style="background: #DBEAFE; color: #0284C7;">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Chapter 1 Notes</h4>
+                            <p>PDF • 2.3 MB • 45 views</p>
+                        </div>
+                        <div class="list-action" onclick="app.showToast('Opening PDF...')">
+                            <i class="fas fa-download"></i>
+                        </div>
+                    </div>
+
+                    <div class="list-item">
+                        <div class="list-icon" style="background: #F0E7FF; color: #9333EA;">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Lecture Recording</h4>
+                            <p>MP4 • 125 MB • 32 views</p>
+                        </div>
+                        <div class="list-action" onclick="app.showToast('Playing video...')">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="app.showToast('Upload feature coming soon')">
+                        <i class="fas fa-upload"></i> Upload Material
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tests Tab -->
+            <div id="tab-tests" style="display: none;">
+                <div class="card">
+                    <div class="list-item">
+                        <div class="list-icon" style="background: #FECACA; color: #DC2626;">
+                            <i class="fas fa-file-check"></i>
+                        </div>
+                        <div class="list-content">
+                            <h4>Quick Quiz 1</h4>
+                            <p>10 questions • 15 mins</p>
+                        </div>
+                        <div class="list-action" onclick="app.openModal('testModal')">Create</div>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="app.openModal('testModal')">
+                        <i class="fas fa-plus"></i> Create New Test
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE SCREEN -->
+        <div id="profile-screen" class="screen">
+            <div class="profile-header">
+                <div class="profile-img">RS</div>
+                <h3>Rajesh Singh</h3>
+                <p>Mathematics Teacher • Exp: 8 Years</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Personal Information</div>
+                <div class="list-item">
+                    <div class="list-icon" style="background: var(--primary-light); color: var(--primary);">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>Email</h4>
+                        <p>rajesh.singh@teachconnect.com</p>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="list-icon" style="background: var(--secondary-light); color: var(--secondary);">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>Phone</h4>
+                        <p>+91 98765 43210</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Leave & Performance</div>
+                <div class="list-item" onclick="app.openModal('leaveModal')">
+                    <div class="list-icon" style="background: #FEF3C7; color: var(--accent);">
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>Apply for Leave</h4>
+                        <p>Available: 18 days</p>
+                    </div>
+                    <div class="list-action">→</div>
+                </div>
+                <div class="list-item">
+                    <div class="list-icon" style="background: #F0E7FF; color: #9333EA;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>Performance Rating</h4>
+                        <p>4.8 / 5.0 ⭐</p>
+                    </div>
+                    <span class="badge badge-success">Excellent</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Settings & Support</div>
+                <div class="list-item" onclick="app.showToast('Opening settings...')">
+                    <div class="list-icon" style="background: var(--bg-color); color: var(--text-sec);">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>App Settings</h4>
+                        <p>Notifications, Privacy</p>
+                    </div>
+                    <div class="list-action">→</div>
+                </div>
+                <div class="list-item" onclick="app.showToast('Contacting support...')">
+                    <div class="list-icon" style="background: var(--bg-color); color: var(--text-sec);">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>Help & Support</h4>
+                        <p>Contact our team</p>
+                    </div>
+                    <div class="list-action">→</div>
+                </div>
+                <div class="list-item" onclick="app.logout()" style="color: var(--danger);">
+                    <div class="list-icon" style="background: var(--danger-light); color: var(--danger);">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <div class="list-content">
+                        <h4>Logout</h4>
+                        <p>Sign out from TeachConnect</p>
+                    </div>
+                    <div class="list-action">→</div>
+                </div>
+            </div>
+
+            <div style="height: 30px;"></div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="app.goToScreen('home')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <div class="nav-label">Home</div>
+        </div>
+        <div class="nav-item" onclick="app.goToScreen('attendance')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <div class="nav-label">Attend</div>
+        </div>
+        <div class="nav-item" onclick="app.goToScreen('academics')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>
+            <div class="nav-label">Academics</div>
+        </div>
+        <div class="nav-item" onclick="app.goToScreen('profile')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <div class="nav-label">Profile</div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Leave Modal -->
+    <div id="leaveModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-umbrella-beach"></i> Apply for Leave</div>
+                <button class="close-btn" onclick="app.closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Leave Type</label>
+                <select class="form-select">
+                    <option>Casual Leave</option>
+                    <option>Sick Leave</option>
+                    <option>Personal Leave</option>
+                    <option>Maternity Leave</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-input">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <textarea class="form-textarea" placeholder="Please describe your reason..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Attach Document</label>
+                <input type="file" class="form-input">
+            </div>
+
+            <button class="btn btn-primary" onclick="app.submitLeave()">
+                <i class="fas fa-paper-plane"></i> Submit Request
+            </button>
+        </div>
+    </div>
+
+    <!-- Homework Modal -->
+    <div id="homeworkModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-file-alt"></i> Assign Homework</div>
+                <button class="close-btn" onclick="app.closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Select Batch</label>
+                <select class="form-select">
+                    <option>Xth A - Mathematics</option>
+                    <option>XIIth B - Science</option>
+                    <option>XIth C - Commerce</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" placeholder="e.g., Chapter 1 Numericals">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Instructions</label>
+                <textarea class="form-textarea" placeholder="Detailed instructions..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" class="form-input">
+            </div>
+
+            <button class="btn btn-primary" onclick="app.assignHomework()">
+                <i class="fas fa-check"></i> Assign Homework
+            </button>
+        </div>
+    </div>
+
+    <!-- Marks Modal -->
+    <div id="marksModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-chart-bar"></i> Enter Marks</div>
+                <button class="close-btn" onclick="app.closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Exam/Assessment</label>
+                <select class="form-select">
+                    <option>Unit Test 1</option>
+                    <option>Quiz 1</option>
+                    <option>Mid Semester Exam</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Batch</label>
+                <select class="form-select">
+                    <option>Xth A</option>
+                    <option>XIIth B</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total Marks</label>
+                <input type="number" class="form-input" placeholder="100">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Upload CSV/Excel</label>
+                <input type="file" class="form-input" accept=".csv,.xlsx">
+            </div>
+
+            <button class="btn btn-primary" onclick="app.uploadMarks()">
+                <i class="fas fa-upload"></i> Upload Marks
+            </button>
+        </div>
+    </div>
+
+    <!-- Test Modal -->
+    <div id="testModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-pen-fancy"></i> Create Test</div>
+                <button class="close-btn" onclick="app.closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Test Title</label>
+                <input type="text" class="form-input" placeholder="e.g., Quick Quiz 1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Batch</label>
+                <select class="form-select">
+                    <option>Xth A</option>
+                    <option>XIIth B</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Total Questions</label>
+                    <input type="number" class="form-input" placeholder="10" value="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duration (mins)</label>
+                    <input type="number" class="form-input" placeholder="15" value="15">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" class="form-input">
+            </div>
+
+            <button class="btn btn-primary" onclick="app.createTest()">
+                <i class="fas fa-plus"></i> Create Test
+            </button>
+        </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div id="announcementModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-bullhorn"></i> Send Announcement</div>
+                <button class="close-btn" onclick="app.closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Select Recipients</label>
+                <select class="form-select" multiple>
+                    <option selected>All Students</option>
+                    <option selected>Xth A</option>
+                    <option>XIIth B</option>
+                    <option>Parents</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Announcement Title</label>
+                <input type="text" class="form-input" placeholder="e.g., Class Cancelled Tomorrow">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea class="form-textarea" placeholder="Write your announcement..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" onclick="app.sendAnnouncement()">
+                <i class="fas fa-paper-plane"></i> Send Announcement
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+</div>
+
+<script>
+    const app = {
+        currentScreen: 'home',
+        currentBatch: 'xth-a',
+
+        goToScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId + '-screen').classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const screenMap = { 'home': 0, 'attendance': 1, 'academics': 2, 'profile': 3 };
+            document.querySelectorAll('.nav-item')[screenMap[screenId]].classList.add('active');
+            
+            this.currentScreen = screenId;
+        },
+
+        openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        },
+
+        closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        },
+
+        showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        },
+
+        toggleAttendance(btn, type) {
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.toggle-btn').forEach(b => {
+                b.classList.remove('active-p', 'active-a');
+            });
+            if (type === 'p') btn.classList.add('active-p');
+            else btn.classList.add('active-a');
+        },
+
+        selectBatch(el, batch) {
+            document.querySelectorAll('.tab-pills .pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            this.currentBatch = batch;
+            this.showToast(`Selected batch: ${batch}`);
+        },
+
+        markAllPresent() {
+            document.querySelectorAll('.toggle-container').forEach(container => {
+                container.querySelectorAll('.toggle-btn').forEach(btn => {
+                    btn.classList.remove('active-p', 'active-a');
+                });
+                container.querySelector('.toggle-btn').classList.add('active-p');
+            });
+            this.showToast('All marked Present ✓');
+        },
+
+        saveAttendance() {
+            this.showToast('Attendance saved successfully! ✓');
+            setTimeout(() => {
+                this.goToScreen('home');
+            }, 1000);
+        },
+
+        switchAcademicTab(tabName) {
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.getElementById('tab-' + tabName).style.display = 'block';
+            
+            document.querySelectorAll('.tab-pills .pill').forEach((p, idx) => {
+                p.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        },
+
+        editHomework() {
+            this.openModal('homeworkModal');
+            this.showToast('Opening homework editor...');
+        },
+
+        assignHomework() {
+            this.closeModal();
+            this.showToast('Homework assigned successfully! ✓');
+        },
+
+        uploadMarks() {
+            this.closeModal();
+            this.showToast('Marks uploaded successfully! ✓');
+        },
+
+        createTest() {
+            this.closeModal();
+            this.showToast('Test created successfully! ✓');
+        },
+
+        sendAnnouncement() {
+            this.closeModal();
+            this.showToast('Announcement sent to all! ✓');
+        },
+
+        submitLeave() {
+            this.closeModal();
+            this.showToast('Leave request submitted! ✓');
+        },
+
+        showNotifications() {
+            this.showToast('📬 3 new notifications');
+        },
+
+        logout() {
+            this.showToast('Logging out...');
+            setTimeout(() => {
+                alert('Session ended. Please login again.');
+            }, 1000);
+        }
+    };
+
+    // Close modals on background click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                app.closeModal();
+            }
+        });
+    });
+
+    // Prevent content scroll issues
+    document.addEventListener('touchmove', (e) => {
+        if (e.target.closest('.phone-frame') && !e.target.closest('.content-area')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+</script>
+
+</body>
+</html>

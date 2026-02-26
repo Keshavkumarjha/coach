@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoachMaster - #1 Coaching Management Software</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #818CF8;
+            --secondary: #0EA5E9;
+            --dark: #0F172A;
+            --text: #334155;
+            --text-light: #64748B;
+            --bg-light: #F8FAFC;
+            --bg-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #0EA5E9 100%);
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-card: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: #FFFFFF; color: var(--text); overflow-x: hidden; }
+
+        /* --- ANIMATION SYSTEM --- */
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        @keyframes heroFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes floatPhone { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* Enhanced Scroll Animations */
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.9); } 50% { transform: scale(1.02); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+
+        /* Scroll triggered animations */
+        .animate-on-scroll { opacity: 0; animation: none; }
+        .animate-on-scroll.in-view { animation: slideInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+
+        /* Stagger animations */
+        .stagger > * { opacity: 0; animation: slideInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .stagger > :nth-child(1) { animation-delay: 0.1s; }
+        .stagger > :nth-child(2) { animation-delay: 0.2s; }
+        .stagger > :nth-child(3) { animation-delay: 0.3s; }
+        .stagger > :nth-child(4) { animation-delay: 0.4s; }
+
+        /* Hover animations */
+        .hover-lift { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .hover-lift:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); }
+
+        /* --- NAVBAR --- */
+        nav { position: fixed; top: 0; width: 100%; z-index: 100; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); transition: box-shadow 0.3s; }
+        .logo { font-size: 24px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo-icon { width: 36px; height: 36px; background: var(--primary); color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-links a { text-decoration: none; color: var(--text); font-weight: 500; font-size: 14px; transition: 0.3s; }
+        .nav-links a:hover { color: var(--primary); }
+        .btn-login { background: var(--dark); color: white; padding: 10px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; transition: all 0.3s; }
+        .btn-login:hover { background: var(--primary); transform: translateY(-2px); }
+
+        /* --- HERO SECTION --- */
+        .hero { min-height: 100vh; background: var(--bg-gradient); padding: 120px 5% 80px; display: flex; align-items: center; position: relative; overflow: hidden; }
+        .hero-bg { position: absolute; inset: 0; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%); animation: rotateBg 20s linear infinite; pointer-events: none; }
+        @keyframes rotateBg { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .hero-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+        .hero-text { flex: 1; padding-right: 50px; color: white; animation: heroFade 1s ease-out forwards; }
+        .hero-text h1 { font-size: 52px; line-height: 1.1; margin-bottom: 20px; font-weight: 800; }
+        .hero-text p { font-size: 18px; line-height: 1.6; margin-bottom: 30px; opacity: 0.9; }
+        .btn-white { background: white; color: var(--primary); padding: 14px 28px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .btn-white:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+
+        .login-card { width: 400px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 30px; backdrop-filter: blur(12px); box-shadow: var(--shadow-card); animation: heroFade 1.2s ease-out forwards; }
+        .login-header { text-align: center; margin-bottom: 25px; color: white; }
+        .input-group { margin-bottom: 15px; }
+        .input-group input { width: 100%; padding: 14px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.2); border-radius: 10px; color: white; font-family: inherit; outline: none; font-size: 14px; }
+        .input-group input::placeholder { color: rgba(255,255,255,0.7); }
+        .btn-login-full { width: 100%; padding: 14px; background: white; border: none; color: var(--primary); font-weight: 700; border-radius: 10px; cursor: pointer; font-size: 15px; margin-top: 10px; transition: transform 0.2s; }
+        .btn-login-full:active { transform: scale(0.98); }
+
+        /* --- SOCIAL PROOF: LOGO STRIP --- */
+        .logo-strip { padding: 30px 5%; background: white; border-bottom: 1px solid #E2E8F0; overflow: hidden; }
+        .strip-title { text-align: center; margin-bottom: 20px; font-size: 14px; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .marquee-content { display: flex; gap: 80px; animation: scrollLeft 15s linear infinite; }
+        .marquee-item { font-size: 20px; font-weight: 700; color: #CBD5E1; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+
+        /* --- STATS BAR --- */
+        .stats-bar { background: var(--bg-light); padding: 50px 5%; }
+        .stats-container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
+        .stat-item h2 { font-size: 36px; color: var(--primary); margin-bottom: 5px; font-weight: 800; }
+        .stat-item p { font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- PROBLEM/SOLUTION SECTION (NEW) --- */
+        .pain-section { padding: 80px 5%; background: white; }
+        .pain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; max-width: 1100px; margin: 0 auto; align-items: center; }
+        .pain-card { background: #FEF2F2; border-left: 4px solid #EF4444; padding: 20px; margin-bottom: 20px; border-radius: 8px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden; }
+        .pain-card::before { content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .pain-card:hover { transform: translateX(-4px); border-left-width: 6px; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.1); }
+        .pain-card:hover::before { opacity: 1; }
+        .pain-card h4 { color: #B91C1C; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; transition: transform 0.3s; position: relative; z-index: 1; }
+        .pain-card:hover h4 { transform: translateX(2px); }
+        .pain-card p { color: var(--text); font-size: 15px; font-weight: 500; position: relative; z-index: 1; }
+
+        .solution-card { background: #ECFDF5; border-left: 4px solid #10B981; padding: 20px; margin-bottom: 20px; border-radius: 8px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden; }
+        .solution-card::before { content: ''; position: absolute; top: 0; right: 0; width: 100px; height: 100px; background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .solution-card:hover { transform: translateX(-4px); border-left-width: 6px; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.1); }
+        .solution-card:hover::before { opacity: 1; }
+        .solution-card h4 { color: #059669; margin-bottom: 5px; font-size: 14px; text-transform: uppercase; transition: transform 0.3s; position: relative; z-index: 1; }
+        .solution-card:hover h4 { transform: translateX(2px); }
+        .solution-card p { color: var(--text); font-size: 15px; font-weight: 500; position: relative; z-index: 1; }
+
+        /* --- SECTION STYLING --- */
+        .section { padding: 100px 5%; max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-header h2 { font-size: 36px; color: var(--dark); margin-bottom: 15px; }
+        .section-header p { color: var(--text-light); max-width: 600px; margin: 0 auto; }
+
+        /* --- FEATURES --- */
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+        .feature-card { background: white; padding: 30px; border-radius: 16px; border: 1px solid #E2E8F0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden; }
+        .feature-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, transparent 100%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .feature-card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: var(--shadow-card); }
+        .feature-card:hover::before { opacity: 1; }
+        .f-icon { width: 50px; height: 50px; background: var(--primary-light); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px; transition: all 0.3s; }
+        .feature-card:hover .f-icon { transform: scale(1.1) rotate(5deg); background: var(--primary); }
+
+        /* --- PRODUCT SHOWCASE (NEW) --- */
+        .product-section { background: var(--dark); padding: 100px 5%; text-align: center; position: relative; overflow: hidden; }
+        .product-section h2 { color: white; font-size: 36px; margin-bottom: 20px; }
+        .product-section p { color: rgba(255,255,255,0.7); margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .dashboard-mockup { width: 100%; max-width: 1100px; margin: 0 auto; background: #1E293B; border-radius: 12px; padding: 10px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .dm-inner { background: #F1F5F9; border-radius: 6px; height: 500px; position: relative; overflow: hidden; display: flex; }
+        .dm-sidebar { width: 60px; background: white; border-right: 1px solid #E2E8F0; }
+        .dm-content { flex: 1; padding: 20px; }
+
+        /* --- TESTIMONIALS --- */
+        .testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+        .testi-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 25px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden; }
+        .testi-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 70%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .testi-card:hover { border-color: var(--primary); transform: translateY(-8px); box-shadow: 0 20px 40px rgba(79, 70, 229, 0.15); }
+        .testi-card:hover::before { opacity: 1; }
+        .testi-stars { color: #F59E0B; margin-bottom: 10px; font-size: 14px; transition: transform 0.3s; }
+        .testi-card:hover .testi-stars { transform: scale(1.1); }
+        .testi-text { font-size: 14px; line-height: 1.6; margin-bottom: 20px; color: var(--text); }
+        .testi-author { display: flex; align-items: center; gap: 10px; }
+        .author-avatar { width: 40px; height: 40px; background: var(--primary-light); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; transition: all 0.3s; }
+        .testi-card:hover .author-avatar { transform: scale(1.15) rotate(-5deg); background: var(--primary); }
+
+        /* =========================
+           VALUE SECTION (PREMIUM UI)
+           ========================= */
+        .value-section{
+          padding: 100px 5%;
+          background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        }
+        .value-container{ max-width: 1200px; margin: 0 auto; }
+        .value-head{ text-align: center; max-width: 780px; margin: 0 auto 45px; }
+        .value-badge{
+          display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+          border-radius: 999px; background: rgba(79,70,229,0.08); color: var(--primary);
+          font-weight: 800; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+          border: 1px solid rgba(79,70,229,0.18);
+        }
+        .value-head h2{ font-size: 38px; color: var(--dark); margin: 14px 0 10px; line-height: 1.15; }
+        .value-head p{ color: var(--text-light); font-size: 16px; line-height: 1.75; }
+        .value-grid{ display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 26px; align-items: stretch; }
+        .value-cards{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .value-card{
+          background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+          padding: 18px; display: flex; gap: 14px; align-items: flex-start;
+          box-shadow: 0 10px 20px rgba(15,23,42,0.06);
+          transition: transform .25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow .25s ease, border-color .25s ease;
+          position: relative; overflow: hidden;
+        }
+        .value-card::before{
+          content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+          background: linear-gradient(135deg, rgba(79, 70, 229, 0.03) 0%, transparent 100%);
+          opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .value-card:hover{ transform: translateY(-8px); border-color: rgba(79,70,229,0.35); box-shadow: 0 18px 35px rgba(15,23,42,0.12); }
+        .value-card:hover::before{ opacity: 1; }
+        .value-icon{
+          width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+          background: var(--bg-gradient); color: #fff; font-weight: 900; font-size: 18px; flex: 0 0 auto;
+        }
+        .value-info h4{ font-size: 15px; margin-bottom: 6px; color: var(--dark); font-weight: 800; }
+        .value-info p{ font-size: 13px; color: var(--text-light); line-height: 1.55; }
+
+        .value-right{
+          background: var(--bg-gradient); border-radius: 18px; padding: 22px; color: #fff;
+          box-shadow: 0 25px 50px rgba(15,23,42,0.22); border: 1px solid rgba(255,255,255,0.18);
+          position: relative; overflow: hidden;
+        }
+        .value-right::before{
+          content:""; position:absolute; width: 260px; height: 260px; background: rgba(255,255,255,0.18);
+          filter: blur(60px); border-radius: 50%; top: -120px; right: -120px;
+        }
+        .value-right-top h3{ font-size: 20px; font-weight: 900; margin-bottom: 6px; position: relative; z-index: 1; }
+        .value-right-top p{ opacity: .9; font-size: 13.5px; line-height: 1.6; position: relative; z-index: 1; }
+
+        .value-list{ list-style: none; margin-top: 16px; display: grid; gap: 10px; position: relative; z-index: 1; }
+        .value-list li{ display: flex; gap: 10px; align-items: flex-start; font-size: 14px; opacity: .95; }
+        .tick{
+          width: 22px; height: 22px; border-radius: 999px; background: rgba(255,255,255,0.22);
+          display: grid; place-items: center; font-weight: 900; line-height: 1;
+        }
+        .value-cta{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; position: relative; z-index: 1; }
+        .value-cta a{
+          text-decoration: none; font-weight: 900; padding: 12px 16px; border-radius: 12px;
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          transition: transform .2s ease, filter .2s ease;
+        }
+        .value-cta a:hover{ transform: translateY(-2px); filter: brightness(1.05); }
+        .v-primary{ background: #fff; color: var(--primary); box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
+        .v-ghost{ background: rgba(255,255,255,0.16); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+
+        .value-mini{ margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; position: relative; z-index: 1; }
+        .mini-box{ background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22); border-radius: 14px; padding: 12px 10px; text-align: center; }
+        .mini-box b{ display:block; font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+        .mini-box span{ font-size: 12px; opacity: .9; }
+
+        @media (max-width: 980px){
+          .value-grid{ grid-template-columns: 1fr; }
+          .value-cards{ grid-template-columns: 1fr; }
+          .value-head h2{ font-size: 30px; }
+        }
+
+        /* ===== PRICING section background ===== */
+        .pt-section{ padding: 60px 18px; background:#f3f5f8; }
+        .pt-wrap{ max-width: 1200px; margin: 0 auto; border-radius: 14px; overflow: hidden; box-shadow: 0 28px 60px rgba(0,0,0,.18); }
+        .pt-table{
+          width:100%; border-collapse: separate; border-spacing:0; table-layout: fixed;
+          background:#2a3552; color:rgba(255,255,255,.92);
+        }
+        .pt-col-feature{ width: 30%; }
+        .pt-col-plan{ width: 14%; }
+        .pt-table th, .pt-table td{
+          border-right: 1px solid rgba(255,255,255,.09);
+          border-bottom: 1px solid rgba(255,255,255,.09);
+          padding: 18px 16px; text-align:center; vertical-align: middle;
+        }
+        .pt-table th:last-child, .pt-table td:last-child{ border-right:none; }
+        thead th{ background:#2c3654; position: relative; padding: 22px 16px; }
+        .pt-title{ text-align:left; padding: 22px 22px; }
+        .pt-titleTop{ line-height:1; }
+        .pt-titleBig{ font-weight: 900; letter-spacing: .08em; font-size: 28px; }
+        .pt-desc{ margin: 14px 0 0; color: rgba(255,255,255,.7); font-size: 13px; line-height: 1.55; max-width: 320px; }
+        .pt-planTop{ display:grid; gap:10px; justify-items:center; }
+        .pt-planName{ font-size: 12px; font-weight: 900; letter-spacing: .16em; opacity:.9; }
+        .pt-planPrice{ font-size: 38px; font-weight: 900; line-height: 1; }
+        .pt-planSub{ display:block; margin-top: 8px; font-size: 11px; letter-spacing:.08em; opacity: .75; font-weight: 700; }
+
+        tbody tr:nth-child(odd) th.pt-feature, tbody tr:nth-child(odd) td{ background:#323e5f; }
+        tbody tr:nth-child(even) th.pt-feature, tbody tr:nth-child(even) td{ background:#2a3552; }
+
+        .pt-feature{
+          text-align:left; padding-left: 22px; padding-right: 22px;
+          color: rgba(255,255,255,.72); font-size: 13px; font-weight: 700; line-height: 1.45;
+        }
+        .pt-big{ font-size: 18px; font-weight: 900; letter-spacing: .02em; }
+
+        .pt-icon{
+          width: 34px; height: 34px; display:inline-grid; place-items:center; border-radius: 999px;
+          box-shadow: inset 0 -2px 0 rgba(0,0,0,.2);
+        }
+        .pt-icon.ok{ background:#33c26b; }
+        .pt-icon.no{ background:#ff4d4f; }
+        .pt-icon.ok::before{ content:"✓"; font-weight:900; font-size:18px; color:#fff; transform:translateY(-1px); }
+        .pt-icon.no::before{ content:"✕"; font-weight:900; font-size:18px; color:#fff; transform:translateY(-1px); }
+
+        .pt-ribbon{
+          position:absolute; top: 14px; left: -46px; transform: rotate(-45deg);
+          width: 160px; text-align:center; padding: 7px 0; font-size: 11px; font-weight: 900;
+          letter-spacing: .08em; color:#fff; box-shadow: 0 10px 18px rgba(0,0,0,.22); pointer-events:none;
+        }
+        .pt-ribbonPurple{ background: linear-gradient(90deg,#8a3ffc,#5b6cff); }
+        .pt-ribbonOrange{ background: linear-gradient(90deg,#ff7a18,#ff3d77); }
+
+        .pt-ctaRow th, .pt-ctaRow td{ border-bottom:none; padding:0; background: transparent !important; }
+        .pt-btn{ display:block; padding: 16px 10px; font-weight: 900; font-size: 18px; text-decoration:none; color:#fff; }
+        .pt-btn:hover{ filter: brightness(1.05); }
+        .b1{ background: linear-gradient(90deg,#78d63a,#31c06f); }
+        .b2{ background: linear-gradient(90deg,#23c7c8,#1a78d6); }
+        .b3{ background: linear-gradient(90deg,#10b981,#06b6d4); }
+        .b4{ background: linear-gradient(90deg,#7c3aed,#a855f7); }
+        .b5{ background: linear-gradient(90deg,#ff7a18,#ff3d77); }
+        thead tr th:first-child{ border-top-left-radius:14px; }
+        thead tr th:last-child{ border-top-right-radius:14px; }
+        @media (max-width: 1050px){
+          .pt-wrap{ overflow-x:auto; }
+          .pt-table{ min-width: 1100px; }
+        }
+
+        /* --- FAQ --- */
+        .faq-section { background: var(--bg-light); padding: 100px 5%; }
+        .faq-container { max-width: 800px; margin: 0 auto; }
+        .faq-item { background: white; border-radius: 10px; margin-bottom: 15px; overflow: hidden; border: 1px solid #E2E8F0; }
+        .faq-question { padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: var(--dark); transition: background 0.3s; }
+        .faq-question:hover { background: #F8FAFC; }
+        .faq-question i { transition: transform 0.3s; font-style: normal; font-weight: bold; color: var(--primary); }
+        .faq-answer { max-height: 0; overflow: hidden; background: #F8FAFC; transition: max-height 0.4s ease; }
+        .faq-answer p { padding: 20px; font-size: 14px; line-height: 1.6; color: var(--text-light); }
+        .faq-item.active .faq-question i { transform: rotate(45deg); }
+
+        /* --- APP SECTION --- */
+        .app-section { background: var(--dark); color: white; padding: 100px 5%; position: relative; overflow: hidden; }
+        .app-section::before { content: ''; position: absolute; top: 10%; left: 5%; width: 300px; height: 300px; background: var(--primary); filter: blur(100px); opacity: 0.2; border-radius: 50%; }
+        .app-container { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
+        .app-text { flex: 1; z-index: 1; }
+        .app-text h2 { font-size: 36px; margin-bottom: 20px; }
+        .app-text p { margin-bottom: 30px; opacity: 0.8; line-height: 1.6; }
+        .store-btn { background: white; color: var(--dark); padding: 12px 20px; border-radius: 10px; display: inline-flex; align-items: center; gap: 10px; text-decoration: none; margin-right: 15px; transition: transform 0.3s; }
+        .store-btn:hover { transform: scale(1.05); }
+        .phones-mockup { flex: 1; display: flex; justify-content: center; position: relative; height: 500px; z-index: 1; }
+        .phone { width: 220px; height: 440px; background: #1E293B; border-radius: 30px; border: 4px solid #475569; position: absolute; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; }
+        .phone:nth-child(1) { left: 20%; top: 20px; z-index: 1; animation: floatPhone 6s ease-in-out infinite; }
+        .phone:nth-child(2) { right: 20%; top: 0; z-index: 2; animation: floatPhone 6s ease-in-out infinite 2s; }
+
+        /* --- FOOTER --- */
+        footer { background: #F1F5F9; padding: 80px 5% 30px; color: var(--text-light); }
+        .footer-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+        .footer-col ul { list-style: none; }
+        .footer-col ul li { margin-bottom: 10px; }
+        .footer-col ul li a { color: var(--text-light); text-decoration: none; font-size: 14px; transition: 0.2s; }
+        .footer-col ul li a:hover { color: var(--primary); padding-left: 5px; }
+
+        /* =========================
+           RESPONSIVE FIX (ONLY CSS)
+           ========================= */
+        @media (max-width: 900px){
+          nav{ padding: 12px 4%; }
+          .nav-links{ gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+          .btn-login{ padding: 9px 16px; }
+
+          .hero{ padding: 110px 5% 60px; }
+          .hero-content{ flex-direction: column; text-align: center; }
+          .hero-text{ padding-right: 0; margin-bottom: 26px; }
+          .hero-text h1{ font-size: 38px; }
+          .hero-text p{ font-size: 15px; }
+          .login-card{ width: 100%; max-width: 420px; }
+
+          .stats-container{ grid-template-columns: 1fr 1fr; }
+          .pain-grid{ grid-template-columns: 1fr; }
+          .features-grid{ grid-template-columns: 1fr; }
+          .testimonial-grid{ grid-template-columns: 1fr; }
+
+          .dm-inner{ height: 380px; }
+
+          .app-container{ flex-direction: column; gap: 30px; text-align: center; }
+          .phones-mockup{ width: 100%; height: 520px; }
+          .phone:nth-child(1){ left: 10%; }
+          .phone:nth-child(2){ right: 10%; }
+
+          .footer-grid{ grid-template-columns: 1fr; gap: 22px; }
+          footer{ padding: 55px 5% 25px; }
+        }
+
+        @media (max-width: 420px){
+          .stats-container{ grid-template-columns: 1fr; }
+          .hero-text h1{ font-size: 32px; }
+          .phones-mockup{ height: 560px; }
+          .phone{ width: 200px; height: 410px; }
+          .phone:nth-child(1){ left: 4%; }
+          .phone:nth-child(2){ right: 4%; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav>
+        <a href="#" class="logo">
+            <div class="logo-icon">CM</div>
+            CoachMaster
+        </a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="student.html">Student</a>
+            <a href="teacher.html">Teacher</a>
+            <a href="#faq">FAQ</a>
+            <a href="#" class="btn-login">Login</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <div class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Run Your Coaching Institute Like a Pro.</h1>
+                <p>The all-in-one SaaS platform to manage Admissions, Fees, Attendance, and Communication. Trusted by 500+ coaching centers across India.</p>
+                <a href="#pricing" class="btn-white">
+                    Start 14-Day Free Trial
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                </a>
+                <div style="margin-top: 30px; display: flex; align-items: center; gap: 20px; opacity: 0.8; font-size: 12px; justify-content: flex-start;">
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        No Credit Card Required
+                    </span>
+                </div>
+            </div>
+
+            <div class="login-card">
+                <div class="login-header">
+                    <h3>Admin / Teacher Login</h3>
+                    <p>Access your dashboard securely</p>
+                </div>
+                <form>
+                    <div class="input-group">
+                        <input type="text" placeholder="Institute ID or Phone">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" placeholder="Password">
+                    </div>
+                    <button type="button" class="btn-login-full">Login to Dashboard</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SOCIAL PROOF: LOGOS -->
+    <div class="logo-strip">
+        <div class="strip-title">Trusted by India's Fastest Growing Institutes</div>
+        <div style="overflow:hidden; display:flex;">
+            <div class="marquee-content">
+                <div class="marquee-item">Physics Wallah</div>
+                <div class="marquee-item">Unacademy Partner</div>
+                <div class="marquee-item">Allen Career</div>
+                <div class="marquee-item">Resonance</div>
+                <div class="marquee-item">FIITJEE</div>
+                <div class="marquee-item">Aakash Institute</div>
+                <!-- Duplicate -->
+                <div class="marquee-item">Physics Wallah</div>
+                <div class="marquee-item">Unacademy Partner</div>
+                <div class="marquee-item">Allen Career</div>
+                <div class="marquee-item">Resonance</div>
+                <div class="marquee-item">FIITJEE</div>
+                <div class="marquee-item">Aakash Institute</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item reveal">
+                <h2><span class="counter" data-target="500">0</span>+</h2>
+                <p>Institutes</p>
+            </div>
+            <div class="stat-item reveal">
+                <h2><span class="counter" data-target="75000">0</span>+</h2>
+                <p>Students</p>
+            </div>
+            <div class="stat-item reveal">
+                <h2><span class="counter" data-target="120">0</span>+</h2>
+                <p>Cities</p>
+            </div>
+            <div class="stat-item reveal">
+                <h2>₹<span class="counter" data-target="15">0</span>Cr+</h2>
+                <p>Fees Processed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROBLEM / SOLUTION (NEW) -->
+    <div class="pain-section">
+        <div class="section-header">
+            <h2>Why Switch to CoachMaster?</h2>
+            <p>Stop struggling with outdated methods. Start scaling.</p>
+        </div>
+        <div class="pain-grid">
+            <div class="reveal">
+                <h3 style="margin-bottom: 20px; color: #B91C1C;">❌ The Old Way</h3>
+                <div class="pain-card">
+                    <h4>Manual Errors</h4>
+                    <p>"Lost fee records in notebooks, forgot to remind parents about dues."</p>
+                </div>
+                <div class="pain-card">
+                    <h4>Communication Gap</h4>
+                    <p>"Parents complain they weren't informed about class cancellations or syllabus changes."</p>
+                </div>
+                <div class="pain-card">
+                    <h4>Data Loss</h4>
+                    <p>"Lost student contact lists and attendance registers during flood/transition."</p>
+                </div>
+            </div>
+            <div class="reveal" style="transition-delay: 0.2s;">
+                <h3 style="margin-bottom: 20px; color: #059669;">✅ The CoachMaster Way</h3>
+                <div class="solution-card">
+                    <h4>Automated Finance</h4>
+                    <p>"Auto-reminders sent via WhatsApp. Fees collected directly to bank. 100% accurate."</p>
+                </div>
+                <div class="solution-card">
+                    <h4>Instant Alerts</h4>
+                    <p>"One-click broadcast to 1000 parents. Absentee alerts sent automatically."</p>
+                </div>
+                <div class="solution-card">
+                    <h4>Cloud Secure</h4>
+                    <p>"Data stored securely on cloud. Access from anywhere, never lost."</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="section" id="features" style="background: var(--bg-light);">
+        <div class="section-header">
+            <h2>Everything You Need to Grow</h2>
+            <p>Streamline your operations and focus on what matters most - Teaching.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="f-icon">💰</div>
+                <h3>Smart Fee Management</h3>
+                <p>Auto-reminders, UPI payment tracking, and instant receipts. Stop chasing parents for fees.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.1s;">
+                <div class="f-icon">✅</div>
+                <h3>Live Attendance</h3>
+                <p>One-tap marking with instant SMS alerts to parents. No more proxy attendance.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.2s;">
+                <div class="f-icon">📢</div>
+                <h3>Broadcast Center</h3>
+                <p>Send "Class Cancelled" alerts or exam schedules to specific batches instantly.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.3s;">
+                <div class="f-icon">📱</div>
+                <h3>Branded Mobile Apps</h3>
+                <p>Dedicated apps for your institute. Students and Parents stay connected 24/7.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.4s;">
+                <div class="f-icon">📊</div>
+                <h3>Real-time Reports</h3>
+                <p>Visual dashboards showing fee defaulters, low attendance, and growth trends.</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.5s;">
+                <div class="f-icon">📝</div>
+                <h3>Online Tests</h3>
+                <p>Conduct MCQ tests with auto-grading. Share results instantly on the app.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCT SHOWCASE -->
+    <div class="product-section" id="product">
+        <h2 class="reveal">Powerful Admin Dashboard</h2>
+        <p class="reveal">Manage your entire institute from a single, clean interface.</p>
+
+        <div class="dashboard-mockup reveal">
+            <div class="dm-inner">
+                <div class="dm-sidebar"></div>
+                <div class="dm-content">
+                    <img src="styles/dashboadimg.png" alt="Description of Image" style="width:100%; height:auto;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TESTIMONIALS -->
+    <div class="section">
+        <div class="section-header">
+            <h2>Loved by Institute Owners</h2>
+            <p>See what our customers have to say about us.</p>
+        </div>
+        <div class="testimonial-grid">
+            <div class="testi-card reveal">
+                <div class="testi-stars">★★★★★</div>
+                <div class="testi-text">"Earlier I used to track fees in notebooks. CoachMaster automated everything. My revenue has increased by 20%!"</div>
+                <div class="testi-author">
+                    <div class="author-avatar">RS</div>
+                    <div class="author-info">
+                        <h4>Rajesh Sir</h4>
+                        <p>Maths Excellence, Patna</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testi-card reveal" style="transition-delay: 0.2s;">
+                <div class="testi-stars">★★★★★</div>
+                <div class="testi-text">"The app is very simple. Even parents who are not tech-savvy can use it easily. The Hindi option is a plus."</div>
+                <div class="testi-author">
+                    <div class="author-avatar">PS</div>
+                    <div class="author-info">
+                        <h4>Priya Ma'am</h4>
+                        <p>Science Hub, Jaipur</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testi-card reveal" style="transition-delay: 0.4s;">
+                <div class="testi-stars">★★★★★</div>
+                <div class="testi-text">"I manage 3 branches. The Multi-tenant feature lets me control everything from one panel. Highly recommended!"</div>
+                <div class="testi-author">
+                    <div class="author-avatar">AK</div>
+                    <div class="author-info">
+                        <h4>Amit Kumar</h4>
+                        <p>Career Institute, Lucknow</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VALUE SECTION -->
+    <section class="value-section" id="why">
+      <div class="value-container">
+
+        <div class="value-head reveal">
+          <span class="value-badge">Why CoachMaster</span>
+          <h2>Built for Indian Coaching Institutes</h2>
+          <p>
+            Collect fees on time, track attendance in seconds, and communicate instantly with parents.
+            No spreadsheets, no confusion — just a smooth system that scales with your institute.
+          </p>
+        </div>
+
+        <div class="value-grid">
+          <div class="value-left reveal">
+            <div class="value-cards">
+              <div class="value-card">
+                <div class="value-icon">₹</div>
+                <div class="value-info">
+                  <h4>Fees + Auto Reminders</h4>
+                  <p>Reduce fee pending with WhatsApp/SMS reminders and instant receipts.</p>
+                </div>
+              </div>
+
+              <div class="value-card">
+                <div class="value-icon">✓</div>
+                <div class="value-info">
+                  <h4>Attendance in 10 seconds</h4>
+                  <p>Mark attendance fast and send absentee alerts automatically.</p>
+                </div>
+              </div>
+
+              <div class="value-card">
+                <div class="value-icon">📱</div>
+                <div class="value-info">
+                  <h4>Teacher + Student Apps</h4>
+                  <p>Teacher app for classes. Student app for updates & fee history.</p>
+                </div>
+              </div>
+
+              <div class="value-card">
+                <div class="value-icon">📊</div>
+                <div class="value-info">
+                  <h4>Reports that grow business</h4>
+                  <p>Defaulter list, batch reports, fee insights, and growth tracking.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="value-right reveal" style="transition-delay:0.15s;">
+            <div class="value-right-top">
+              <h3>What you get instantly ✅</h3>
+              <p>Everything you need to start — upgrade only when you grow.</p>
+            </div>
+
+            <ul class="value-list">
+              <li><span class="tick">✓</span> Setup in 10 minutes</li>
+              <li><span class="tick">✓</span> WhatsApp / SMS integration (Pro & above)</li>
+              <li><span class="tick">✓</span> Secure cloud data + backups</li>
+              <li><span class="tick">✓</span> Easy onboarding & support</li>
+            </ul>
+
+            <div class="value-cta">
+              <a class="v-primary" href="#pricing">View Plans</a>
+              <a class="v-ghost" href="#faq">Read FAQs</a>
+            </div>
+
+            <div class="value-mini">
+              <div class="mini-box">
+                <b>500+</b>
+                <span>Institutes</span>
+              </div>
+              <div class="mini-box">
+                <b>75K+</b>
+                <span>Students</span>
+              </div>
+              <div class="mini-box">
+                <b>24/7</b>
+                <span>Support</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pt-section" id="pricing">
+      <div class="pt-wrap">
+        <table class="pt-table" aria-label="Pricing table">
+          <colgroup>
+            <col class="pt-col-feature" />
+            <col class="pt-col-plan" />
+            <col class="pt-col-plan" />
+            <col class="pt-col-plan" />
+            <col class="pt-col-plan" />
+            <col class="pt-col-plan" />
+          </colgroup>
+
+          <thead>
+            <tr>
+              <th class="pt-head pt-title" scope="col">
+                <div class="pt-titleBox">
+                  <div class="pt-titleTop">
+                    <div class="pt-titleBig">PRICING</div>
+                    <div class="pt-titleBig">TABLE</div>
+                  </div>
+                  <p class="pt-desc">
+                    Choose a plan that fits your institute size. Start free and upgrade anytime.
+                  </p>
+                </div>
+              </th>
+
+              <th class="pt-head" scope="col">
+                <div class="pt-planTop">
+                  <div class="pt-planName">FREE</div>
+                  <div class="pt-planPrice">₹0<span class="pt-planSub">/month</span></div>
+                </div>
+              </th>
+
+              <th class="pt-head" scope="col">
+                <div class="pt-planTop">
+                  <div class="pt-planName">STARTER</div>
+                  <div class="pt-planPrice">₹299<span class="pt-planSub">/month</span></div>
+                </div>
+              </th>
+
+              <th class="pt-head" scope="col">
+                <div class="pt-planTop">
+                  <div class="pt-planName">GROWTH</div>
+                  <div class="pt-planPrice">₹599<span class="pt-planSub">/month</span></div>
+                </div>
+              </th>
+
+              <th class="pt-head" scope="col">
+                <div class="pt-ribbon pt-ribbonPurple"><span>Recommended</span></div>
+                <div class="pt-planTop">
+                  <div class="pt-planName">PRO</div>
+                  <div class="pt-planPrice">₹999<span class="pt-planSub">/month</span></div>
+                </div>
+              </th>
+
+              <th class="pt-head" scope="col">
+                <div class="pt-ribbon pt-ribbonOrange"><span>Best Value</span></div>
+                <div class="pt-planTop">
+                  <div class="pt-planName">ENTERPRISE</div>
+                  <div class="pt-planPrice">Custom<span class="pt-planSub">Talk to us</span></div>
+                </div>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <th class="pt-feature" scope="row">Student Limit</th>
+              <td class="pt-big">Up to 50</td>
+              <td class="pt-big">Up to 100</td>
+              <td class="pt-big">Up to 200</td>
+              <td class="pt-big">Up to 500</td>
+              <td class="pt-big">Unlimited</td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">Student App Access</th>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">Attendance</th>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">Fee Collection</th>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">Teacher App Access</th>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">WhatsApp Automation</th>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">SMS & WhatsApp Alerts</th>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">Dedicated Server</th>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr>
+              <th class="pt-feature" scope="row">Priority Support</th>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon no"></span></td>
+              <td class="pt-iconCell"><span class="pt-icon ok"></span></td>
+            </tr>
+
+            <tr class="pt-ctaRow">
+              <th class="pt-feature" scope="row"></th>
+              <td class="pt-ctaCell"><a class="pt-btn b1" href="#">Start Free</a></td>
+              <td class="pt-ctaCell"><a class="pt-btn b2" href="#">Buy Now</a></td>
+              <td class="pt-ctaCell"><a class="pt-btn b3" href="#">Buy Now</a></td>
+              <td class="pt-ctaCell"><a class="pt-btn b4" href="#">Buy Now</a></td>
+              <td class="pt-ctaCell"><a class="pt-btn b5" href="#">Contact Sales</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <div class="faq-section" id="faq">
+        <div class="section-header">
+            <h2>Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-container">
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Can I use CoachMaster on my phone?
+                    <i>+</i>
+                </div>
+                <div class="faq-answer">
+                    <p>Yes! We provide dedicated Android apps for Students, Parents, and Teachers. The Admin panel is accessible via any web browser on desktop or mobile.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Is my data safe?
+                    <i>+</i>
+                </div>
+                <div class="faq-answer">
+                    <p>Absolutely. We use bank-grade encryption and host your data on secure cloud servers. Daily backups ensure you never lose information.</p>
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Can I migrate my existing student data?
+                    <i>+</i>
+                </div>
+                <div class="faq-answer">
+                    <p>Yes, we provide free onboarding support. You can upload an Excel sheet, or our team will manually enter the data for you to get you started quickly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP DOWNLOAD -->
+    <div class="app-section" id="apps">
+        <div class="app-container">
+            <div class="app-text reveal">
+                <h2>Mobile Apps for Everyone</h2>
+                <p>Stay connected from anywhere. Our apps are designed for Tier-2 and Tier-3 cities—lightweight, offline-ready, and simple to use.</p>
+
+                <div class="download-btns">
+                    <a href="#" class="store-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.61 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z" /></svg>
+                        <div>
+                            <span>GET IT ON</span>
+                            <strong>Google Play</strong>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="phones-mockup">
+                <div class="phone"><img src="styles/teacherimg.png" alt="Description of Image" style="width:100%; height:auto;"></div>
+                <div class="phone"><img src="styles/studentimg.png" alt="Description of Image" style="width:100%; height:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="logo" style="margin-bottom: 20px;">
+                    <div class="logo-icon">CM</div>
+                    CoachMaster
+                </div>
+                <p style="font-size: 14px; line-height: 1.6;">Empowering coaching institutes across India with smart technology.</p>
+            </div>
+            <div class="footer-col">
+                <h3>Product</h3>
+                <ul>
+                    <li><a href="#">Features</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Updates</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Support</h3>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div style="text-align: center; padding-top: 30px; border-top: 1px solid #E2E8F0; font-size: 13px;">
+            © 2023 CoachMaster Technologies Pvt Ltd. Made with ❤️ in India.
+        </div>
+    </footer>
+
+    <script>
+        // Scroll Reveal Animation
+        const reveals = document.querySelectorAll('.reveal');
+        const revealOnScroll = () => {
+            reveals.forEach(element => {
+                if (element.getBoundingClientRect().top < window.innerHeight - 100) {
+                    element.classList.add('active');
+                }
+            });
+        };
+        window.addEventListener('scroll', revealOnScroll);
+        window.addEventListener('load', revealOnScroll);
+
+        // Counter Animation
+        let countersAnimated = false;
+        const runCounters = () => {
+            if (countersAnimated) return;
+            const statsSection = document.querySelector('.stats-bar');
+            if (statsSection.getBoundingClientRect().top < window.innerHeight - 100) {
+                countersAnimated = true;
+                document.querySelectorAll('.counter').forEach(counter => {
+                    const target = +counter.getAttribute('data-target');
+                    const increment = target / 50;
+                    const updateCount = () => {
+                        const current = +counter.innerText.replace(/,/g, '');
+                        if (current < target) {
+                            counter.innerText = Math.ceil(current + increment).toLocaleString();
+                            setTimeout(updateCount, 30);
+                        } else {
+                            counter.innerText = target.toLocaleString();
+                        }
+                    };
+                    updateCount();
+                });
+            }
+        };
+        window.addEventListener('scroll', runCounters);
+
+        // Enhanced Scroll Animations with Intersection Observer
+        const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -100px 0px' };
+
+        const animationObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('in-view');
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .testi-card, .value-card, .pain-card, .solution-card, .faq-item').forEach(el => {
+            el.classList.add('animate-on-scroll');
+            animationObserver.observe(el);
+        });
+
+        // Parallax (fixed selector)
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const bg = document.querySelector('.hero-bg');
+            if (bg) bg.style.transform = `rotate(${scrollY * 0.02}deg) scale(${1 + scrollY * 0.0002})`;
+        });
+
+        // Navbar scroll effect
+        const navbar = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > 50) {
+                navbar.style.boxShadow = 'var(--shadow-soft)';
+                navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.98)';
+            } else {
+                navbar.style.boxShadow = 'none';
+                navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            }
+        });
+
+        // FAQ Accordion
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            const answer = item.querySelector('.faq-answer');
+            const isActive = item.classList.contains('active');
+
+            document.querySelectorAll('.faq-item').forEach(i => {
+                i.classList.remove('active');
+                i.querySelector('.faq-answer').style.maxHeight = null;
+            });
+
+            if (!isActive) {
+                item.classList.add('active');
+                answer.style.maxHeight = answer.scrollHeight + "px";
+            }
+        }
+    </script>
+</body>
+</html>

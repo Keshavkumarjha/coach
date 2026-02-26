@@ -11,11 +11,11 @@ from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+    path("", TemplateView.as_view(template_name="pages/index.html"), name="home"),
     path(
-        "about/",
-        TemplateView.as_view(template_name="pages/about.html"),
-        name="about",
+        "dashboard/",
+        TemplateView.as_view(template_name="pages/dashboard.html"),
+        name="dashboard",
     ),
 
     path(settings.ADMIN_URL, admin.site.urls),

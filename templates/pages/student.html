@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoachMaster - Student App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --primary-dark: #4338CA;
+            --secondary: #10B981;
+            --accent: #F59E0B;
+            --danger: #EF4444;
+            --info: #3B82F6;
+            --warning: #F59E0B;
+            --success: #10B981;
+            --bg-color: #F3F4F6;
+            --surface: #FFFFFF;
+            --text-main: #1F2937;
+            --text-sec: #6B7280;
+            --text-light: #9CA3AF;
+            --border-color: #E5E7EB;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+            --radius-lg: 20px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: #f0f4f8; 
+            margin: 0; 
+            padding: 20px 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        
+        /* PHONE FRAME */
+        .phone-frame { 
+            width: 390px; 
+            height: 844px; 
+            background: var(--bg-color); 
+            border-radius: 40px; 
+            overflow: hidden; 
+            position: relative; 
+            border: 10px solid #111; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        /* STATUS BAR */
+        .status-bar { 
+            height: 30px; 
+            background: var(--surface); 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 25px; 
+            align-items: center; 
+            font-size: 11px; 
+            font-weight: 600; 
+            flex-shrink: 0; 
+        }
+
+        /* HEADER */
+        .app-header { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 15px 20px 20px 20px; 
+            border-bottom-left-radius: 30px; 
+            border-bottom-right-radius: 30px; 
+            box-shadow: var(--shadow-card); 
+            position: relative; 
+            z-index: 10; 
+            flex-shrink: 0; 
+            color: white;
+        }
+        
+        .header-top { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .user-info h2 { 
+            margin: 0; 
+            font-size: 18px; 
+            color: white;
+            font-weight: 700;
+        }
+        
+        .user-info p { 
+            margin: 2px 0 0 0; 
+            font-size: 12px; 
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .header-actions { 
+            display: flex; 
+            gap: 10px; 
+        }
+        
+        .icon-btn { 
+            width: 40px; 
+            height: 40px; 
+            background: rgba(255,255,255,0.2); 
+            border-radius: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            cursor: pointer; 
+            position: relative; 
+            border: none;
+            color: white;
+            transition: var(--transition);
+        }
+        
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        .notif-dot { 
+            width: 8px; 
+            height: 8px; 
+            background: var(--danger); 
+            border-radius: 50%; 
+            position: absolute; 
+            top: 6px; 
+            right: 6px; 
+            border: 2px solid white;
+        }
+
+        /* CONTENT AREA */
+        .content-area { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 0 20px 80px 20px; 
+            scroll-behavior: smooth; 
+            background: var(--bg-color);
+        }
+        
+        .content-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .content-area::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 2px;
+        }
+        
+        /* TAB SYSTEM */
+        .screen { 
+            display: none; 
+            padding-top: 20px; 
+            animation: fadeIn 0.3s ease; 
+        }
+        
+        .screen.active { 
+            display: block; 
+        }
+        
+        @keyframes fadeIn { 
+            from { 
+                opacity: 0; 
+                transform: translateY(10px); 
+            } 
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            } 
+        }
+
+        /* COMPONENTS */
+        
+        .card { 
+            background: var(--surface); 
+            border-radius: var(--radius); 
+            padding: 15px; 
+            box-shadow: var(--shadow-card); 
+            margin-bottom: 15px; 
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-title { 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            margin-bottom: 12px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        
+        /* STAT GRID */
+        .stat-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px; 
+            margin-bottom: 20px; 
+        }
+        
+        .stat-card { 
+            background: var(--surface); 
+            padding: 20px; 
+            border-radius: var(--radius); 
+            box-shadow: var(--shadow-card); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            position: relative; 
+            overflow: hidden; 
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-float);
+        }
+        
+        .stat-card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 4px; 
+            background: var(--primary); 
+        }
+        
+        .stat-card.fee::before { 
+            background: var(--danger); 
+        }
+        
+        .stat-card.success::before {
+            background: var(--secondary);
+        }
+        
+        .progress-ring { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            background: conic-gradient(var(--secondary) 85%, #E5E7EB 0); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 10px; 
+            position: relative; 
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--secondary);
+        }
+        
+        .progress-ring::before { 
+            content: ''; 
+            width: 60px; 
+            height: 60px; 
+            background: var(--surface); 
+            border-radius: 50%; 
+            position: absolute; 
+        }
+        
+        .progress-val { 
+            position: relative; 
+            z-index: 1; 
+        }
+        
+        .stat-label { 
+            font-size: 13px; 
+            color: var(--text-sec); 
+            font-weight: 500; 
+        }
+
+        /* LIST ITEMS */
+        .list-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px 0; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        
+        .list-item:last-child { 
+            border-bottom: none; 
+        }
+        
+        .li-icon { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-right: 12px; 
+            font-size: 20px; 
+            flex-shrink: 0;
+        }
+        
+        .li-content { 
+            flex: 1; 
+        }
+        
+        .li-content h4 { 
+            margin: 0; 
+            font-size: 13px; 
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .li-content p { 
+            margin: 2px 0 0 0; 
+            font-size: 12px; 
+            color: var(--text-sec); 
+        }
+        
+        .li-action { 
+            margin-left: auto; 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: var(--primary); 
+            cursor: pointer; 
+        }
+
+        /* SECTION TITLE */
+        .section-title { 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .section-title .see-all {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--primary);
+            cursor: pointer;
+        }
+        
+        /* BUTTONS */
+        .btn { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border-radius: 12px; 
+            border: none; 
+            font-weight: 600; 
+            font-size: 14px; 
+            cursor: pointer; 
+            transition: var(--transition); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+        }
+        
+        .btn-primary { 
+            background: var(--primary); 
+            color: white; 
+        }
+        
+        .btn-primary:active {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary { 
+            background: var(--surface); 
+            color: var(--text-main); 
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:active {
+            background: var(--bg-color);
+        }
+        
+        .btn-success { 
+            background: var(--secondary); 
+            color: white; 
+        }
+        
+        .btn-success:active {
+            background: #059669;
+        }
+        
+        .btn-danger { 
+            background: var(--danger); 
+            color: white; 
+        }
+        
+        .btn-sm { 
+            padding: 8px 12px; 
+            width: auto; 
+            font-size: 12px; 
+            border-radius: 8px; 
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: #ECFDF5;
+            color: #059669;
+        }
+        
+        .badge-danger {
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+        
+        .badge-warning {
+            background: #FFFBEB;
+            color: #D97706;
+        }
+        
+        .badge-info {
+            background: #EFF6FF;
+            color: #2563EB;
+        }
+
+        /* FEE CARD */
+        .fee-card { 
+            background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%); 
+            border-radius: var(--radius); 
+            padding: 20px; 
+            color: white; 
+            margin-bottom: 20px; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: var(--shadow-card);
+        }
+        
+        .fee-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .fee-amount { 
+            font-size: 28px; 
+            font-weight: 700; 
+            margin: 10px 0; 
+            position: relative;
+            z-index: 1;
+        }
+
+        /* GEO CARD */
+        .geo-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            text-align: center;
+            padding: 20px;
+            border-radius: var(--radius);
+            color: white;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .geo-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .location-status {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        /* PROFILE */
+        .profile-header { 
+            text-align: center; 
+            padding: 20px; 
+            background: var(--surface); 
+            border-radius: var(--radius); 
+            margin-bottom: 20px; 
+            box-shadow: var(--shadow-card); 
+        }
+        
+        .profile-avatar { 
+            width: 80px; 
+            height: 80px; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            font-weight: 700; 
+            margin: 0 auto 10px auto; 
+        }
+        
+        .profile-name {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* MODAL */
+        .modal-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(4px);
+            z-index: 200; 
+            display: none; 
+            justify-content: flex-end;
+            align-items: flex-end;
+            padding: 0;
+        }
+        
+        .modal-overlay.show { 
+            display: flex; 
+        }
+        
+        .modal-content { 
+            background: white; 
+            width: 100%; 
+            border-radius: 20px 20px 0 0;
+            padding: 25px 20px; 
+            position: relative; 
+            max-height: 80vh; 
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-title { 
+            font-size: 16px; 
+            font-weight: 700; 
+            color: var(--text-main);
+        }
+        
+        .close-btn { 
+            background: none; 
+            border: none; 
+            font-size: 24px; 
+            cursor: pointer; 
+            color: var(--text-sec); 
+        }
+
+        /* FORM */
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        
+        .form-label { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: var(--text-main); 
+            margin-bottom: 6px; 
+            display: block; 
+        }
+        
+        .form-input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            font-size: 13px; 
+            outline: none; 
+            font-family: inherit; 
+            transition: var(--transition);
+        }
+        
+        .form-input:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* BOTTOM NAV */
+        .bottom-nav { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            height: 70px; 
+            background: white; 
+            border-top: 1px solid var(--border-color); 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            padding-bottom: 10px; 
+            z-index: 100; 
+        }
+        
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            cursor: pointer; 
+            color: var(--text-sec); 
+            transition: var(--transition);
+            width: 20%; 
+        }
+        
+        .nav-item.active { 
+            color: var(--primary); 
+        }
+        
+        .nav-icon { 
+            width: 24px; 
+            height: 24px; 
+            margin-bottom: 4px; 
+        }
+        
+        .nav-label { 
+            font-size: 10px; 
+            font-weight: 500; 
+        }
+
+        /* TOAST */
+        .toast { 
+            position: absolute; 
+            bottom: 90px; 
+            left: 20px; 
+            right: 20px; 
+            background: #333; 
+            color: white; 
+            padding: 12px 16px; 
+            border-radius: 8px; 
+            font-size: 13px; 
+            z-index: 300; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.3s; 
+            text-align: center;
+        }
+        
+        .toast.show { 
+            opacity: 1; 
+        }
+
+        /* NOTIFICATION BELL */
+        .notification-panel {
+            max-height: 60vh;
+        }
+        
+        .notif-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .notif-item:hover {
+            background: var(--primary-light);
+        }
+        
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .notif-content h4 {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .notif-content p {
+            margin: 2px 0 0 0;
+            font-size: 11px;
+            color: var(--text-sec);
+        }
+        
+        .notif-time {
+            font-size: 10px;
+            color: var(--text-light);
+            margin-left: auto;
+        }
+
+        /* CHART PLACEHOLDER */
+        .chart-placeholder {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, rgba(79, 70, 229, 0.05) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sec);
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        /* UTILITIES */
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .mt-20 {
+            margin-top: 20px;
+        }
+        
+        .mb-15 {
+            margin-bottom: 15px;
+        }
+
+        /* CALENDAR */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .cal-day {
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .cal-day.present {
+            background: #DCFCE7;
+            color: #059669;
+        }
+
+        .cal-day.absent{
+            background: #FEE2E2;
+            color: #DC2626;
+        }
+
+        .cal-day.today{
+            background: var(--primary);
+            color: white;
+        }
+
+        .cal-day.empty{
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-frame">
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <div style="display: flex; gap: 5px; color: var(--text-main);">
+            <i class="bi bi-wifi"></i>
+            <i class="bi bi-battery-full"></i>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-top">
+            <div class="user-info">
+                <p>Welcome back,</p>
+                <h2>Rahul Kumar 👋</h2>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="openNotifications()">
+                    <i class="bi bi-bell"></i>
+                    <div class="notif-dot"></div>
+                </button>
+                <button class="icon-btn" onclick="openSettings()">
+                    <i class="bi bi-gear"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-area">
+
+        <!-- HOME SCREEN -->
+        <div id="home-screen" class="screen active">
+            
+            <!-- Stats Grid -->
+            <div class="stat-grid">
+                <div class="stat-card success" onclick="showScreen('attendance')">
+                    <div class="progress-ring"><div class="progress-val">85%</div></div>
+                    <div class="stat-label">Attendance</div>
+                </div>
+                <div class="stat-card fee" onclick="showScreen('fees')">
+                    <div style="font-size: 24px; font-weight: 700; color: var(--danger);">₹5k</div>
+                    <div class="stat-label">Fees Due</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section-title">
+                <span>Quick Actions</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                <button class="btn btn-secondary" onclick="showScreen('attendance')">
+                    <i class="bi bi-geo-alt"></i> Mark Entry
+                </button>
+                <button class="btn btn-secondary" onclick="openModal('leaveModal')">
+                    <i class="bi bi-calendar-plus"></i> Apply Leave
+                </button>
+            </div>
+
+            <!-- Today's Schedule -->
+            <div class="section-title">
+                <span>Today's Schedule</span>
+                <span class="see-all" onclick="showScreen('timetable')">View All</span>
+            </div>
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary);">📐</div>
+                    <div class="li-content">
+                        <h4>Mathematics</h4>
+                        <p>09:00 AM - 10:30 AM</p>
+                    </div>
+                    <div class="li-action" style="color: var(--secondary);">Ongoing</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEF3C7; color: #D97706;">🔬</div>
+                    <div class="li-content">
+                        <h4>Physics Lab</h4>
+                        <p>11:00 AM - 12:30 PM</p>
+                    </div>
+                    <div class="li-action">Upcoming</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #DCFCE7; color: var(--secondary);">📚</div>
+                    <div class="li-content">
+                        <h4>Chemistry</h4>
+                        <p>02:00 PM - 03:30 PM</p>
+                    </div>
+                    <div class="li-action">Later</div>
+                </div>
+            </div>
+
+            <!-- Announcements -->
+            <div class="section-title">
+                <span>Announcements</span>
+                <span class="see-all" onclick="showScreen('announcements')">View All</span>
+            </div>
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEF3C7; color: #D97706;">📢</div>
+                    <div class="li-content">
+                        <h4>Holiday Notice</h4>
+                        <p>School closed on 26 Jan - Republic Day</p>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary);">📌</div>
+                    <div class="li-content">
+                        <h4>Exam Schedule</h4>
+                        <p>Unit tests starting from 30 Nov</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ATTENDANCE SCREEN -->
+        <div id="attendance-screen" class="screen">
+            <div class="geo-card">
+                <div class="geo-icon">📍</div>
+                <h3>Mark Your Attendance</h3>
+                <p style="font-size: 12px; margin: 5px 0 15px 0;">Ensure your GPS is enabled</p>
+                <button class="btn btn-success" onclick="markGeoAttendance()">
+                    <i class="bi bi-check-circle"></i> Mark Attendance
+                </button>
+                <div id="geoStatus" class="location-status">Waiting for location...</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <i class="bi bi-calendar-event"></i> November 2023
+                </div>
+                <div class="calendar-grid">
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">S</div>
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">M</div>
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">T</div>
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">W</div>
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">T</div>
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">F</div>
+                    <div style="font-size: 10px; color: var(--text-sec); font-weight: 700;">S</div>
+                    
+                    <div class="cal-day empty"></div>
+                    <div class="cal-day empty"></div>
+                    <div class="cal-day empty"></div>
+                    <div class="cal-day present">1</div>
+                    <div class="cal-day present">2</div>
+                    <div class="cal-day absent">3</div>
+                    <div class="cal-day">4</div>
+                    
+                    <div class="cal-day">5</div>
+                    <div class="cal-day present">6</div>
+                    <div class="cal-day present">7</div>
+                    <div class="cal-day present">8</div>
+                    <div class="cal-day present">9</div>
+                    <div class="cal-day present">10</div>
+                    <div class="cal-day">11</div>
+                    
+                    <div class="cal-day">12</div>
+                    <div class="cal-day present">13</div>
+                    <div class="cal-day present">14</div>
+                    <div class="cal-day today">15</div>
+                    <div class="cal-day">16</div>
+                    <div class="cal-day">17</div>
+                    <div class="cal-day">18</div>
+                </div>
+            </div>
+
+            <!-- Leave Requests -->
+            <div class="section-title"><span>Leave Requests</span></div>
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEF2F2; color: var(--danger);">🗓️</div>
+                    <div class="li-content">
+                        <h4>Medical Leave</h4>
+                        <p>15 Oct - 16 Oct</p>
+                    </div>
+                    <div class="badge badge-success">Approved</div>
+                </div>
+                <button class="btn btn-secondary mt-20" onclick="openModal('leaveModal')">
+                    <i class="bi bi-plus-circle"></i> New Leave Request
+                </button>
+            </div>
+        </div>
+
+        <!-- FEES SCREEN -->
+        <div id="fees-screen" class="screen">
+            <div class="fee-card">
+                <div style="font-size: 12px; opacity: 0.9;">Total Outstanding</div>
+                <div class="fee-amount">₹12,000</div>
+                <button class="btn" style="background: white; color: var(--danger); margin-top: 10px;" onclick="openModal('paymentModal')">
+                    <i class="bi bi-credit-card"></i> Pay Now
+                </button>
+            </div>
+
+            <!-- Payment History -->
+            <div class="section-title"><span>Payment History</span></div>
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-content">
+                        <h4>Nov Installment</h4>
+                        <p>Due: 10 Nov 2023</p>
+                    </div>
+                    <div class="badge badge-danger">Overdue</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-content">
+                        <h4>Oct Installment</h4>
+                        <p>Paid: 08 Oct 2023</p>
+                    </div>
+                    <div class="badge badge-success">Paid</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-content">
+                        <h4>Sep Installment</h4>
+                        <p>Paid: 30 Sep 2023</p>
+                    </div>
+                    <div class="badge badge-success">Paid</div>
+                </div>
+            </div>
+
+            <!-- Fee Breakdown -->
+            <div class="section-title"><span>Fee Breakdown</span></div>
+            <div class="card">
+                <div style="font-size: 12px; color: var(--text-sec); margin-bottom: 10px;">Monthly: ₹2,000</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="padding: 10px; background: var(--primary-light); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 11px; color: var(--text-sec);">Tuition</div>
+                        <div style="font-size: 14px; font-weight: 700; color: var(--primary);">₹1,500</div>
+                    </div>
+                    <div style="padding: 10px; background: #FEF3C7; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 11px; color: var(--text-sec);">Materials</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #D97706;">₹500</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACADEMICS SCREEN -->
+        <div id="academics-screen" class="screen">
+            
+            <!-- Performance Chart -->
+            <div class="section-title"><span>Your Performance</span></div>
+            <div class="chart-placeholder">
+                <span>📊 Performance Analysis</span>
+            </div>
+
+            <!-- Homework -->
+            <div class="section-title"><span>Homework</span></div>
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary);">📝</div>
+                    <div class="li-content">
+                        <h4>Physics Numericals</h4>
+                        <p>Due: 20 Nov • 5 Problems</p>
+                    </div>
+                    <div class="li-action">View</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #DCFCE7; color: #059669;">✅</div>
+                    <div class="li-content">
+                        <h4>Essay Writing</h4>
+                        <p>Submitted on 15 Nov</p>
+                    </div>
+                    <div class="badge badge-success">Done</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary);">📚</div>
+                    <div class="li-content">
+                        <h4>Reading Assignment</h4>
+                        <p>Due: 25 Nov • Chapter 5</p>
+                    </div>
+                    <div class="li-action">View</div>
+                </div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="section-title"><span>Test Results</span></div>
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-content">
+                        <h4>Unit Test 1</h4>
+                        <p>Science • 12 Nov 2023</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <h4 style="color: var(--secondary); margin: 0;">85/100</h4>
+                        <div class="badge badge-success">Pass</div>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="li-content">
+                        <h4>Weekly Quiz</h4>
+                        <p>Maths • 10 Nov 2023</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <h4 style="color: var(--primary); margin: 0;">45/50</h4>
+                        <div class="badge badge-info">Rank: 4th</div>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="li-content">
+                        <h4>Monthly Test</h4>
+                        <p>Physics • 05 Nov 2023</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <h4 style="color: var(--danger); margin: 0;">62/100</h4>
+                        <div class="badge badge-warning">Need Improvement</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TIME TABLE SCREEN -->
+        <div id="timetable-screen" class="screen">
+            <div class="section-title"><span>Time Table</span></div>
+            
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px;">
+                <div style="text-align: center; padding: 8px; background: var(--primary); color: white; border-radius: 8px; font-size: 11px; font-weight: 600;">Mon</div>
+                <div style="text-align: center; padding: 8px; background: var(--primary); color: white; border-radius: 8px; font-size: 11px; font-weight: 600;">Tue</div>
+                <div style="text-align: center; padding: 8px; background: var(--primary); color: white; border-radius: 8px; font-size: 11px; font-weight: 600;">Wed</div>
+                <div style="text-align: center; padding: 8px; background: var(--primary); color: white; border-radius: 8px; font-size: 11px; font-weight: 600;">Thu</div>
+                <div style="text-align: center; padding: 8px; background: var(--primary); color: white; border-radius: 8px; font-size: 11px; font-weight: 600;">Fri</div>
+            </div>
+
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary); font-size: 16px;">📐</div>
+                    <div class="li-content">
+                        <h4>Mathematics</h4>
+                        <p>09:00 AM - 10:30 AM (Mon, Tue, Wed)</p>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEF3C7; color: #D97706; font-size: 16px;">🔬</div>
+                    <div class="li-content">
+                        <h4>Physics</h4>
+                        <p>10:45 AM - 12:15 PM (Tue, Thu, Sat)</p>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #DCFCE7; color: var(--secondary); font-size: 16px;">⚗️</div>
+                    <div class="li-content">
+                        <h4>Chemistry</h4>
+                        <p>02:00 PM - 03:30 PM (Mon, Wed, Fri)</p>
+                    </div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEE2E2; color: var(--danger); font-size: 16px;">🌍</div>
+                    <div class="li-content">
+                        <h4>History</h4>
+                        <p>03:45 PM - 04:45 PM (Wed, Fri)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANNOUNCEMENTS SCREEN -->
+        <div id="announcements-screen" class="screen">
+            <div class="section-title"><span>Announcements</span></div>
+            
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEF3C7; color: #D97706; font-size: 18px;">📢</div>
+                    <div class="li-content">
+                        <h4>Holiday Notice</h4>
+                        <p style="margin-top: 4px;">School closed on 26 Jan - Republic Day. Classes will resume on 27 Jan.</p>
+                        <p style="font-size: 10px; color: var(--text-light); margin-top: 4px;">2 days ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary); font-size: 18px;">📌</div>
+                    <div class="li-content">
+                        <h4>Exam Schedule Released</h4>
+                        <p style="margin-top: 4px;">Unit tests starting from 30 Nov. Check your time table for details.</p>
+                        <p style="font-size: 10px; color: var(--text-light); margin-top: 4px;">1 week ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: #DCFCE7; color: var(--secondary); font-size: 18px;">✅</div>
+                    <div class="li-content">
+                        <h4>Class Materials Available</h4>
+                        <p style="margin-top: 4px;">New study notes for Chapter 5 have been uploaded. Download from the app.</p>
+                        <p style="font-size: 10px; color: var(--text-light); margin-top: 4px;">10 days ago</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESSAGES SCREEN -->
+        <div id="messages-screen" class="screen">
+            <div class="section-title"><span>Messages</span></div>
+            
+            <div class="card">
+                <div class="list-item">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary); border-radius: 50%; width: 40px; height: 40px;">RS</div>
+                    <div class="li-content">
+                        <h4>Rajesh Sir</h4>
+                        <p>Check the solutions I sent...</p>
+                    </div>
+                    <div class="li-action" style="color: var(--text-light); font-size: 11px; font-weight: 400;">2h</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #FEF3C7; color: #D97706; border-radius: 50%; width: 40px; height: 40px;">AM</div>
+                    <div class="li-content">
+                        <h4>Anita Ma'am</h4>
+                        <p>Good work on today's assignment</p>
+                    </div>
+                    <div class="li-action" style="color: var(--text-light); font-size: 11px; font-weight: 400;">5h</div>
+                </div>
+                <div class="list-item">
+                    <div class="li-icon" style="background: #DCFCE7; color: var(--secondary); border-radius: 50%; width: 40px; height: 40px;">VK</div>
+                    <div class="li-content">
+                        <h4>Class Group</h4>
+                        <p>Akshay: When is the next test?</p>
+                    </div>
+                    <div class="li-action" style="color: var(--text-light); font-size: 11px; font-weight: 400;">1d</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE SCREEN -->
+        <div id="profile-screen" class="screen">
+            <div class="profile-header">
+                <div class="profile-avatar">RK</div>
+                <h3 class="profile-name">Rahul Kumar</h3>
+                <p class="stat-label" style="margin-top: 8px;">Class 10 • Batch A<br>ID: STU2023001<br>Enrollment: 15 Aug 2023</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="section-title"><span>Quick Stats</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                <div style="background: var(--primary); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 20px; font-weight: 700;">85%</div>
+                    <div style="font-size: 11px; margin-top: 4px;">Attendance</div>
+                </div>
+                <div style="background: var(--secondary); color: white; padding: 15px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 20px; font-weight: 700;">78.5</div>
+                    <div style="font-size: 11px; margin-top: 4px;">Avg Score</div>
+                </div>
+            </div>
+
+            <!-- Account -->
+            <div class="section-title"><span>Account</span></div>
+            <div class="card">
+                <div class="list-item" onclick="showToast('Editing profile...')">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary);">👤</div>
+                    <div class="li-content">
+                        <h4>Edit Profile</h4>
+                        <p>Update your information</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+                <div class="list-item" onclick="showToast('Changing password...')">
+                    <div class="li-icon" style="background: #FEF3C7; color: #D97706;">🔐</div>
+                    <div class="li-content">
+                        <h4>Change Password</h4>
+                        <p>Secure your account</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+                <div class="list-item" onclick="showToast('Downloading receipts...')">
+                    <div class="li-icon" style="background: var(--primary-light); color: var(--primary);">📄</div>
+                    <div class="li-content">
+                        <h4>Download Receipts</h4>
+                        <p>Fee payment receipts</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+            </div>
+
+            <!-- Support -->
+            <div class="section-title"><span>Support</span></div>
+            <div class="card">
+                <div class="list-item" onclick="showToast('Opening help...')">
+                    <div class="li-icon" style="background: #DCFCE7; color: var(--secondary);">❓</div>
+                    <div class="li-content">
+                        <h4>Help & Support</h4>
+                        <p>FAQs and contact support</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+                <div class="list-item" onclick="showToast('Opening app info...')">
+                    <div class="li-icon" style="background: #EFF6FF; color: var(--info);">ℹ️</div>
+                    <div class="li-content">
+                        <h4>About App</h4>
+                        <p>Version 1.0.0</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+                <div class="list-item" onclick="logout()">
+                    <div class="li-icon" style="background: #FEE2E2; color: var(--danger);">🚪</div>
+                    <div class="li-content" style="color: var(--danger);">
+                        <h4>Logout</h4>
+                        <p>Sign out of your account</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showScreen('home')">
+            <i class="bi bi-house-fill nav-icon"></i>
+            <div class="nav-label">Home</div>
+        </div>
+        <div class="nav-item" onclick="showScreen('academics')">
+            <i class="bi bi-book-fill nav-icon"></i>
+            <div class="nav-label">Learn</div>
+        </div>
+        <div class="nav-item" onclick="showScreen('messages')">
+            <i class="bi bi-chat-dots-fill nav-icon"></i>
+            <div class="nav-label">Messages</div>
+        </div>
+        <div class="nav-item" onclick="showScreen('attendance')">
+            <i class="bi bi-calendar-check-fill nav-icon"></i>
+            <div class="nav-label">Attend</div>
+        </div>
+        <div class="nav-item" onclick="showScreen('profile')">
+            <i class="bi bi-person-fill nav-icon"></i>
+            <div class="nav-label">Profile</div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    
+    <!-- Leave Modal -->
+    <div class="modal-overlay" id="leaveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Apply for Leave</h3>
+                <button class="close-btn" onclick="closeModal('leaveModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Leave Type</label>
+                <select class="form-input">
+                    <option>Select Leave Type</option>
+                    <option>Sick Leave</option>
+                    <option>Casual Leave</option>
+                    <option>Medical Leave</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">From Date</label>
+                <input type="date" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">To Date</label>
+                <input type="date" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Reason</label>
+                <textarea class="form-input" rows="3" placeholder="Brief reason..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="submitLeave()">Submit Request</button>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Payment</h3>
+                <button class="close-btn" onclick="closeModal('paymentModal')">✕</button>
+            </div>
+            <div style="background: var(--danger); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 5px;">Amount Due</div>
+                <div style="font-size: 28px; font-weight: 700;">₹12,000</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <select class="form-input">
+                    <option>Select Payment Method</option>
+                    <option>Credit Card</option>
+                    <option>Debit Card</option>
+                    <option>UPI</option>
+                    <option>Net Banking</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" class="form-input" value="12000" placeholder="Enter amount">
+            </div>
+            <button class="btn btn-primary" onclick="processPayment()">
+                <i class="bi bi-credit-card"></i> Pay Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div class="modal-overlay" id="notificationsModal">
+        <div class="modal-content notification-panel">
+            <div class="modal-header">
+                <h3 class="modal-title">Notifications</h3>
+                <button class="close-btn" onclick="closeModal('notificationsModal')">✕</button>
+            </div>
+            <div class="notif-item">
+                <div class="notif-icon" style="background: var(--primary-light); color: var(--primary);">📚</div>
+                <div class="notif-content">
+                    <h4>New Homework Assigned</h4>
+                    <p>Physics numericals - 5 problems</p>
+                </div>
+                <div class="notif-time">2h</div>
+            </div>
+            <div class="notif-item">
+                <div class="notif-icon" style="background: #FEF3C7; color: #D97706;">✅</div>
+                <div class="notif-content">
+                    <h4>Test Results Ready</h4>
+                    <p>Unit Test 1 - Science: 85/100</p>
+                </div>
+                <div class="notif-time">5h</div>
+            </div>
+            <div class="notif-item">
+                <div class="notif-icon" style="background: #DCFCE7; color: var(--secondary);">💬</div>
+                <div class="notif-content">
+                    <h4>Teacher Message</h4>
+                    <p>Rajesh Sir replied to your message</p>
+                </div>
+                <div class="notif-time">1d</div>
+            </div>
+            <div class="notif-item">
+                <div class="notif-icon" style="background: #FEE2E2; color: var(--danger);">⚠️</div>
+                <div class="notif-content">
+                    <h4>Fee Reminder</h4>
+                    <p>Your fees are due by 10 Nov</p>
+                </div>
+                <div class="notif-time">2d</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Settings</h3>
+                <button class="close-btn" onclick="closeModal('settingsModal')">✕</button>
+            </div>
+            <div class="card">
+                <div class="list-item" onclick="toggleNotifications()">
+                    <div class="li-content">
+                        <h4>Push Notifications</h4>
+                    </div>
+                    <div style="margin-left: auto;">
+                        <input type="checkbox" id="notifToggle" checked>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showToast('Language settings...')">
+                    <div class="li-content">
+                        <h4>Language</h4>
+                        <p>English</p>
+                    </div>
+                    <div class="li-action">›</div>
+                </div>
+                <div class="list-item" onclick="showToast('Dark mode coming soon...')">
+                    <div class="li-content">
+                        <h4>Dark Mode</h4>
+                    </div>
+                    <div style="margin-left: auto;">
+                        <input type="checkbox" id="darkToggle">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+</div>
+
+<script>
+    // SCREEN MANAGEMENT
+    function showScreen(screenId) {
+        // Hide all screens
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+        
+        // Show target screen
+        const targetScreen = document.getElementById(screenId + '-screen');
+        if (targetScreen) {
+            targetScreen.classList.add('active');
+        }
+        
+        // Update nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        const navMap = {
+            'home': 0,
+            'academics': 1,
+            'messages': 2,
+            'attendance': 3,
+            'profile': 4,
+            'fees': 0,
+            'timetable': 1,
+            'announcements': 1
+        };
+        
+        if (navMap[screenId] !== undefined) {
+            document.querySelectorAll('.nav-item')[navMap[screenId]].classList.add('active');
+        }
+    }
+
+    // MODAL MANAGEMENT
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('show');
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    }
+
+    // NOTIFICATIONS
+    function openNotifications() {
+        openModal('notificationsModal');
+    }
+
+    // SETTINGS
+    function openSettings() {
+        openModal('settingsModal');
+    }
+
+    function toggleNotifications() {
+        const toggle = document.getElementById('notifToggle');
+        toggle.checked = !toggle.checked;
+        showToast(toggle.checked ? 'Notifications enabled' : 'Notifications disabled');
+    }
+
+    // ATTENDANCE
+    function markGeoAttendance() {
+        if (navigator.geolocation) {
+            document.getElementById('geoStatus').textContent = 'Getting location...';
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude.toFixed(4);
+                    const lng = position.coords.longitude.toFixed(4);
+                    document.getElementById('geoStatus').textContent = `Located at ${lat}, ${lng}`;
+                    showToast('Attendance marked successfully! ✓');
+                    setTimeout(() => showScreen('home'), 1500);
+                },
+                function(error) {
+                    document.getElementById('geoStatus').textContent = 'Location access denied';
+                    showToast('Please enable location access');
+                }
+            );
+        }
+    }
+
+    // LEAVE REQUEST
+    function submitLeave() {
+        closeModal('leaveModal');
+        showToast('Leave request submitted! 📝');
+        setTimeout(() => showScreen('home'), 1500);
+    }
+
+    // PAYMENT
+    function processPayment() {
+        showToast('Processing payment... Please wait');
+        closeModal('paymentModal');
+        setTimeout(() => {
+            showToast('Payment successful! 💳');
+        }, 2000);
+    }
+
+    // LOGOUT
+    function logout() {
+        showToast('Logging out...');
+        setTimeout(() => {
+            alert('Logged out successfully!');
+            location.reload();
+        }, 1500);
+    }
+
+    // TOAST NOTIFICATION
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+
+    // MODAL OVERLAY CLICK HANDLING
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('show');
+            }
+        });
+    });
+
+    // Initialize
+    console.log('[v0] Student App Initialized Successfully');
+</script>
+
+</body>
+</html>
