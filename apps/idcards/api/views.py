@@ -1,79 +1,113 @@
+"""
+idcards/api/views.py
+
+ID card templates and bulk generation.
+
+Endpoints
+─────────
+GET/POST        /api/idcard-templates/
+GET/PATCH/DEL   /api/idcard-templates/{id}/
+
+GET             /api/idcards/
+POST            /api/idcards/generate/    Bulk generate for students/teachers
+"""
 from __future__ import annotations
 
-from django.db import transaction
-from rest_framework import serializers
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from apps.common.tenant import get_tenant_context
+from apps.common.mixins import TenantViewSet
+from apps.common.permissions import IsBranchAdmin
 from apps.idcards.models import IdCardTemplate, GeneratedIdCard
-from apps.academics.models import StudentProfile, TeacherProfile
+from apps.idcards.api.serializers import (
+    IdCardTemplateSerializer,
+    GenerateIdCardSerializer,
+    GeneratedIdCardSerializer,
+)
 
 
-class IdCardTemplateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = IdCardTemplate
-        fields = ["id", "name", "layout_json", "created_at"]
-        read_only_fields = ["id", "created_at"]
+class IdCardTemplateViewSet(TenantViewSet):
+    """
+    CRUD for ID card design templates.
 
-    def create(self, validated_data):
-        request = self.context["request"]
-        ctx = get_tenant_context(request)
-        return IdCardTemplate.objects.create(
+    Templates are scoped to the org (not branch-level),
+    so they can be shared across branches of the same org.
+
+    Permissions: IsBranchAdmin (all actions)
+    """
+    serializer_class = IdCardTemplateSerializer
+    permission_classes = [IsBranchAdmin]
+    queryset = IdCardTemplate.objects.all()
+    ordering = ["-created_at"]
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    def get_queryset(self):
+        # Templates are org-scoped, not branch-scoped
+        ctx = self.get_tenant()
+        return IdCardTemplate.objects.filter(
+            organisation=ctx.organisation,
+        ).order_by(*self.ordering)
+
+    def perform_create(self, serializer):
+        ctx = self.get_tenant()
+        serializer.save(
             organisation=ctx.organisation,
             branch=ctx.branch,
-            created_by=request.user,
-            **validated_data,
+            created_by=self.request.user,
         )
 
 
-class GenerateIdCardSerializer(serializers.Serializer):
-    template_id = serializers.IntegerField()
-    student_public_ids = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
-    teacher_public_ids = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
+class GeneratedIdCardViewSet(TenantViewSet):
+    """
+    List generated ID cards and trigger bulk generation.
 
-    @transaction.atomic
-    def create(self, vd):
-        request = self.context["request"]
-        ctx = get_tenant_context(request)
+    Permissions: IsBranchAdmin (all actions)
 
-        tpl = IdCardTemplate.objects.filter(
-            id=vd["template_id"],
-            organisation=ctx.organisation,
-        ).first()
-        if not tpl:
-            raise serializers.ValidationError({"template_id": "Invalid template."})
+    Custom actions:
+        POST /api/idcards/generate/
+        Body: {
+            "template_id": 1,
+            "student_public_ids": ["STU-26-0000001", ...],  // optional
+            "teacher_public_ids": ["TCH-26-0000001", ...]   // optional
+        }
+    """
+    serializer_class = GeneratedIdCardSerializer
+    permission_classes = [IsBranchAdmin]
+    queryset = GeneratedIdCard.objects.select_related(
+        "student", "student__user",
+        "teacher", "teacher__user",
+        "template",
+    ).all()
+    ordering = ["-created_at"]
+    http_method_names = ["get", "post"]
 
-        created = 0
-
-        stu_ids = vd.get("student_public_ids") or []
-        if stu_ids:
-            students = StudentProfile.objects.filter(
-                organisation=ctx.organisation, branch=ctx.branch, public_id__in=stu_ids
+    def get_queryset(self):
+        ctx = self.get_tenant()
+        return (
+            GeneratedIdCard.objects
+            .filter(template__organisation=ctx.organisation)
+            .select_related(
+                "student", "student__user",
+                "teacher", "teacher__user",
+                "template",
             )
-            GeneratedIdCard.objects.bulk_create(
-                [GeneratedIdCard(template=tpl, student=s) for s in students],
-                ignore_conflicts=True,
-            )
-            created += students.count()
+            .order_by(*self.ordering)
+        )
 
-        tch_ids = vd.get("teacher_public_ids") or []
-        if tch_ids:
-            teachers = TeacherProfile.objects.filter(
-                organisation=ctx.organisation, branch=ctx.branch, public_id__in=tch_ids
-            )
-            GeneratedIdCard.objects.bulk_create(
-                [GeneratedIdCard(template=tpl, teacher=t) for t in teachers],
-                ignore_conflicts=True,
-            )
-            created += teachers.count()
-
-        return {"created": created}
-
-
-class GeneratedIdCardSerializer(serializers.ModelSerializer):
-    student_public_id = serializers.CharField(source="student.public_id", read_only=True)
-    teacher_public_id = serializers.CharField(source="teacher.public_id", read_only=True)
-
-    class Meta:
-        model = GeneratedIdCard
-        fields = ["id", "template", "student_public_id", "teacher_public_id", "pdf_file", "created_at"]
-        read_only_fields = fields
+    @action(detail=False, methods=["post"], url_path="generate")
+    def generate(self, request):
+        """
+        POST /api/idcards/generate/
+        Bulk-generates ID cards for the given students and/or teachers.
+        """
+        serializer = GenerateIdCardSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        return Response(
+            {"message": "ID cards generated.", **result},
+            status=status.HTTP_200_OK,
+        )

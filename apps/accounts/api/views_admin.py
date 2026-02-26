@@ -1,54 +1,62 @@
+"""
+accounts/api/views_admin.py
+
+Admin-only ViewSet for managing BranchJoinRequests.
+
+Endpoints
+─────────
+GET  /api/join-requests/              List all requests (filterable by ?status=)
+GET  /api/join-requests/{id}/         Retrieve single request
+POST /api/join-requests/{id}/approve/ Approve → creates membership + profile
+POST /api/join-requests/{id}/reject/  Reject → marks as REJECTED
+"""
 from __future__ import annotations
 
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
 
-from apps.common.tenant import get_tenant_context
+from apps.common.mixins import TenantViewSet, StatusFilterMixin, ApproveRejectMixin
 from apps.common.permissions import IsBranchAdmin
 from apps.accounts.models import BranchJoinRequest, JoinStatus
 from apps.accounts.api.serializers_admin import (
     JoinRequestSerializer,
     JoinApproveSerializer,
     JoinRejectSerializer,
-     )
+)
 
 
-class JoinRequestAdminViewSet(ModelViewSet):
+class JoinRequestAdminViewSet(StatusFilterMixin, ApproveRejectMixin, TenantViewSet):
     """
-    Admin dashboard:
-    - list pending join requests
-    - approve/reject
+    Admin ViewSet for BranchJoinRequest.
+
+    Inherits:
+        StatusFilterMixin    → ?status=PENDING / APPROVED / REJECTED
+        ApproveRejectMixin   → POST …/{id}/approve/ and …/{id}/reject/
+        TenantViewSet        → pagination + org/branch scoping
+
+    Approve flow:
+        POST /api/join-requests/{id}/approve/
+        Body: { "note": "ok", "batch_id": 12 }   (note + batch_id are optional)
+
+    Reject flow:
+        POST /api/join-requests/{id}/reject/
+        Body: { "note": "Duplicate request" }
     """
     serializer_class = JoinRequestSerializer
     permission_classes = [IsBranchAdmin]
     http_method_names = ["get", "post"]
+    queryset = BranchJoinRequest.objects.select_related("branch", "organisation").all()
+    ordering = ["-created_at"]
 
-    def get_queryset(self):
-        ctx = get_tenant_context(self.request)
-        qs = BranchJoinRequest.objects.filter(
-            organisation=ctx.organisation,
-            branch=ctx.branch,
-        ).order_by("-created_at")
+    # ── ApproveRejectMixin hooks ──────────────────────────────────────────────
 
-        status_filter = self.request.query_params.get("status")
-        if status_filter:
-            qs = qs.filter(status=status_filter)
-        return qs
+    def _do_approve(self, request, obj: BranchJoinRequest) -> dict:
+        serializer = JoinApproveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.save(request=request, join_request=obj)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsBranchAdmin], url_path="approve")
-    def approve(self, request, pk=None):
-        jr = self.get_object()
-        s = JoinApproveSerializer(data=request.data)
-        s.is_valid(raise_exception=True)
-        out = s.save(request=request, join_request=jr)
-        return Response(out, status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=["post"], permission_classes=[IsBranchAdmin], url_path="reject")
-    def reject(self, request, pk=None):
-        jr = self.get_object()
-        s = JoinRejectSerializer(data=request.data)
-        s.is_valid(raise_exception=True)
-        out = s.save(request=request, join_request=jr)
-        return Response(out, status=status.HTTP_200_OK)
+    def _do_reject(self, request, obj: BranchJoinRequest) -> dict:
+        serializer = JoinRejectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.save(request=request, join_request=obj)

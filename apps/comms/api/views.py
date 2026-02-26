@@ -1,59 +1,64 @@
+"""
+comms/api/views.py
+
+Announcements for students, parents, and teachers.
+
+Endpoints
+─────────
+GET/POST        /api/announcements/
+GET/PATCH/DEL   /api/announcements/{id}/
+"""
 from __future__ import annotations
 
-from django.db import transaction
-from rest_framework import serializers
+from rest_framework import status
+from rest_framework.response import Response
 
-from apps.common.tenant import get_tenant_context
-from apps.comms.models import Announcement, AnnouncementBatchTarget, AudienceType
-from apps.academics.models import Batch
+from apps.common.mixins import TenantViewSet, StatusFilterMixin
+from apps.common.permissions import IsBranchAdmin, IsStudentOrParent
+from apps.comms.models import Announcement
+from apps.comms.api.serializers import AnnouncementSerializer
 
 
-class AnnouncementSerializer(serializers.ModelSerializer):
-    batch_ids = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True)
+class AnnouncementViewSet(TenantViewSet):
+    """
+    Announcements scoped to the current branch.
 
-    class Meta:
-        model = Announcement
-        fields = [
-            "public_id",
-            "title",
-            "message",
-            "audience_type",
-            "is_pinned",
-            "published_at",
-            "batch_ids",
-            "created_at",
-        ]
-        read_only_fields = ["public_id", "created_at"]
+    Permissions:
+        create / update / delete  → IsBranchAdmin
+        list / retrieve           → IsStudentOrParent
 
-    def validate(self, attrs):
-        aud = attrs.get("audience_type")
-        if aud == AudienceType.BATCHES and not attrs.get("batch_ids"):
-            raise serializers.ValidationError({"batch_ids": "Required when audience_type=BATCHES."})
-        return attrs
+    Query params:
+        ?is_pinned=true       Only pinned announcements
+        ?audience_type=BATCHES | ALL_STUDENTS | ALL_PARENTS | ALL_TEACHERS | BRANCH
+    """
+    serializer_class = AnnouncementSerializer
+    queryset = Announcement.objects.prefetch_related("batch_targets").all()
+    ordering = ["-is_pinned", "-published_at"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
-    @transaction.atomic
-    def create(self, validated_data):
-        request = self.context["request"]
-        ctx = get_tenant_context(request)
+    def get_permissions(self):
+        if self.action in {"create", "update", "partial_update", "destroy"}:
+            return [IsBranchAdmin()]
+        return [IsStudentOrParent()]
 
-        batch_ids = validated_data.pop("batch_ids", [])
+    def get_queryset(self):
+        qs = super().get_queryset()
+        is_pinned = self.request.query_params.get("is_pinned")
+        if is_pinned and is_pinned.lower() == "true":
+            qs = qs.filter(is_pinned=True)
+        audience_type = self.request.query_params.get("audience_type")
+        if audience_type:
+            qs = qs.filter(audience_type=audience_type.upper())
+        return qs
 
-        ann = Announcement.objects.create(
-            organisation=ctx.organisation,
-            branch=ctx.branch,
-            created_by=request.user,
-            **validated_data,
+    def create(self, request, *args, **kwargs):
+        serializer = AnnouncementSerializer(
+            data=request.data,
+            context={"request": request},
         )
-
-        if ann.audience_type == AudienceType.BATCHES:
-            batches = Batch.objects.filter(
-                id__in=batch_ids,
-                organisation=ctx.organisation,
-                branch=ctx.branch,
-            )
-            AnnouncementBatchTarget.objects.bulk_create(
-                [AnnouncementBatchTarget(announcement=ann, batch=b) for b in batches],
-                ignore_conflicts=True,
-            )
-
-        return ann
+        serializer.is_valid(raise_exception=True)
+        announcement = serializer.save()
+        return Response(
+            AnnouncementSerializer(announcement).data,
+            status=status.HTTP_201_CREATED,
+        )
