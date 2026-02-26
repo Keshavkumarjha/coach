@@ -198,6 +198,11 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 # ------------------------------------------------------------------------------
 # DRF (JWT only)
 # ------------------------------------------------------------------------------
+# settings.py
+
+# Check if we are in Debug Mode
+DEBUG = True  # This is usually at the top of your file
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -207,7 +212,7 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 
-    # Throttling (anti brute-force)
+    # Throttling Configuration
     "DEFAULT_THROTTLE_CLASSES": (
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -215,18 +220,20 @@ REST_FRAMEWORK = {
         "apps.accounts.throttles.BranchJoinRateThrottle",
         "apps.accounts.throttles.OrgSignupRateThrottle",
     ),
+    
+    # LOGIC: If DEBUG is True, allow huge limits. If False, use strict limits.
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "200/day",
-        "user": "2000/day",
-        "login": "10/min",
-        "branch_join": "6/hour",
-        "org_signup": "5/day",
+        "anon": "10000/day" if DEBUG else "200/day",
+        "user": "10000/day" if DEBUG else "2000/day",
+        
+        # Use extremely high limits for Login/Signup while developing
+        "login": "1000/min" if DEBUG else "10/min", 
+        "branch_join": "1000/hour" if DEBUG else "6/hour",
+        "org_signup": "1000/day" if DEBUG else "5/day",
     },
 
-    # Safe error responses
     "EXCEPTION_HANDLER": "apps.accounts.exceptions.custom_exception_handler",
 }
-
 
 # ------------------------------------------------------------------------------
 # SIMPLE JWT (secure)
