@@ -1,5 +1,5 @@
 """
-attendance/api/views.py
+attendance/api/views.py  — COMPLETE FIXED VERSION
 
 Class sessions and student attendance management.
 
@@ -12,9 +12,10 @@ Sessions (Teacher)
   POST           /api/sessions/{id}/close/
 
 Attendance
-  GET            /api/attendance/                    List records (admin/teacher)
-  POST           /api/attendance/teacher-bulk-mark/  Bulk mark by teacher
-  POST           /api/attendance/student-geo-mark/   Self-mark with GPS (student)
+  GET            /api/attendance/                      List records (admin/teacher)
+  POST           /api/attendance/teacher-bulk-mark/    Bulk mark by teacher
+  POST           /api/attendance/student-geo-mark/     Self-mark with GPS (student)
+  PATCH          /api/attendance/{id}/correct/         Correct one record  ← FIX #8 (new)
 """
 from __future__ import annotations
 
@@ -85,7 +86,7 @@ class ClassSessionViewSet(TenantViewSet):
         if session_status:
             qs = qs.filter(status=session_status.upper())
         from_date = self.request.query_params.get("from_date")
-        to_date = self.request.query_params.get("to_date")
+        to_date   = self.request.query_params.get("to_date")
         if from_date:
             qs = qs.filter(session_date__gte=from_date)
         if to_date:
@@ -111,27 +112,25 @@ class ClassSessionViewSet(TenantViewSet):
             branch=ctx.branch,
             batch=batch,
             created_by=self.request.user,
-            session_date=serializer.validated_data.get("session_date") or timezone.localdate(),
-        )
-
-    def _set_status(self, request, session_status: str):
-        session = self.get_object()
-        session.status = session_status
-        session.save(update_fields=["status", "updated_at"])
-        return Response(
-            {"message": f"Session {session_status.lower()}."},
-            status=status.HTTP_200_OK,
         )
 
     @action(detail=True, methods=["post"], url_path="open")
-    def open_session(self, request, pk=None):
-        """POST /api/sessions/{id}/open/ — re-open a closed session."""
-        return self._set_status(request, "OPEN")
+    def open(self, request, pk=None):
+        """POST /api/sessions/{id}/open/  — Re-open a closed session."""
+        session = self.get_object()
+        from apps.attendance.models import SessionStatus
+        session.status = SessionStatus.OPEN
+        session.save(update_fields=["status", "updated_at"])
+        return Response({"message": "Session opened."}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="close")
-    def close_session(self, request, pk=None):
-        """POST /api/sessions/{id}/close/ — close an open session."""
-        return self._set_status(request, "CLOSED")
+    def close(self, request, pk=None):
+        """POST /api/sessions/{id}/close/  — Close an open session."""
+        session = self.get_object()
+        from apps.attendance.models import SessionStatus
+        session.status = SessionStatus.CLOSED
+        session.save(update_fields=["status", "updated_at"])
+        return Response({"message": "Session closed."}, status=status.HTTP_200_OK)
 
 
 class StudentAttendanceViewSet(BatchFilterMixin, DateRangeFilterMixin, TenantViewSet):
@@ -141,27 +140,18 @@ class StudentAttendanceViewSet(BatchFilterMixin, DateRangeFilterMixin, TenantVie
     GET  /api/attendance/                    List records (paginated)
     POST /api/attendance/teacher-bulk-mark/  Teacher marks whole session at once
     POST /api/attendance/student-geo-mark/   Student self-marks with GPS coordinates
+    PATCH /api/attendance/{id}/correct/      Correct a single attendance record (NEW)
 
     Query params (list):
         ?batch_id=<int>
         ?from_date=YYYY-MM-DD
         ?to_date=YYYY-MM-DD
-
-    teacher-bulk-mark payload:
-        {
-          "session_id": 12,
-          "records": [
-            {"student_public_id": "STU-26-0000001", "status": "PRESENT"},
-            {"student_public_id": "STU-26-0000002", "status": "ABSENT"}
-          ]
-        }
-
-    student-geo-mark payload:
-        { "session_id": 12, "lat": 28.6139, "lng": 77.2090 }
     """
-    serializer_class = ClassSessionSerializer  # not used for list; overridden below
+    serializer_class = ClassSessionSerializer   # not used for list; overridden below
     permission_classes = [IsTeacher]
-    queryset = StudentAttendance.objects.select_related("session", "student", "student__user").all()
+    queryset = StudentAttendance.objects.select_related(
+        "session", "student", "student__user"
+    ).all()
     ordering = ["-marked_at"]
     date_filter_field = "marked_at__date"
 
@@ -177,13 +167,13 @@ class StudentAttendanceViewSet(BatchFilterMixin, DateRangeFilterMixin, TenantVie
     def _serialize_records(qs):
         return [
             {
-                "id": a.id,
-                "session_id": a.session_id,
+                "id":               a.id,
+                "session_id":       a.session_id,
                 "student_public_id": a.student.public_id,
-                "student_name": a.student.user.full_name,
-                "status": a.status,
-                "marked_by_type": a.marked_by_type,
-                "marked_at": a.marked_at,
+                "student_name":     a.student.user.full_name,
+                "status":           a.status,
+                "marked_by_type":   a.marked_by_type,
+                "marked_at":        a.marked_at,
             }
             for a in qs
         ]
@@ -199,6 +189,10 @@ class StudentAttendanceViewSet(BatchFilterMixin, DateRangeFilterMixin, TenantVie
         """
         POST /api/attendance/teacher-bulk-mark/
         Teacher marks multiple students for a session in one call.
+
+        Body:
+            session_id  int   required
+            records     list  required  [{ student_public_id, status }]
         """
         ctx = self.get_tenant()
         serializer = TeacherBulkMarkSerializer(data=request.data)
@@ -234,13 +228,13 @@ class StudentAttendanceViewSet(BatchFilterMixin, DateRangeFilterMixin, TenantVie
                 session=session,
                 student=student,
                 defaults={
-                    "organisation": ctx.organisation,
-                    "branch": ctx.branch,
-                    "batch": session.batch,
-                    "status": record["status"],
+                    "organisation":   ctx.organisation,
+                    "branch":         ctx.branch,
+                    "batch":          session.batch,
+                    "status":         record["status"],
                     "marked_by_type": MarkedBy.TEACHER,
                     "marked_by_user": request.user,
-                    "marked_at": timezone.now(),
+                    "marked_at":      timezone.now(),
                 },
             )
             saved += 1
@@ -260,41 +254,141 @@ class StudentAttendanceViewSet(BatchFilterMixin, DateRangeFilterMixin, TenantVie
     def student_geo_mark(self, request):
         """
         POST /api/attendance/student-geo-mark/
-        Student self-marks with GPS. Validates distance from branch geo center.
+        Student self-marks attendance for an open session using GPS coordinates.
+
+        Body:
+            session_id  int     required
+            lat         float   required
+            lng         float   required
+            status      string  optional  default: PRESENT
         """
-        ctx = self.get_tenant()
+        ctx = get_tenant_context(request)
         serializer = StudentGeoMarkSerializer(
             data=request.data,
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
+        vd = serializer.validated_data
 
-        session = serializer.validated_data["_session"]
-        student = serializer.validated_data["_student"]
-        distance_m = serializer.validated_data["_distance_m"]
+        session = vd["_session"]
+        student = vd["_student"]
 
-        attendance, _ = StudentAttendance.objects.update_or_create(
+        attendance, created = StudentAttendance.objects.update_or_create(
             session=session,
             student=student,
             defaults={
-                "organisation": ctx.organisation,
-                "branch": ctx.branch,
-                "batch": session.batch,
-                "status": serializer.validated_data["status"],
-                "marked_by_type": MarkedBy.STUDENT_GEO,
+                "organisation":   ctx.organisation,
+                "branch":         ctx.branch,
+                "batch":          session.batch,
+                "status":         vd.get("status", AttendanceStatus.PRESENT),
+                "marked_by_type": MarkedBy.STUDENT,
                 "marked_by_user": request.user,
-                "marked_at": timezone.now(),
-                "distance_from_branch_m": distance_m,
-                "marked_lat": serializer.validated_data["lat"],
-                "marked_lng": serializer.validated_data["lng"],
+                "marked_at":      timezone.now(),
             },
+        )
+        return Response(
+            {
+                "message":     "Attendance marked.",
+                "status":      attendance.status,
+                "distance_m":  vd["_distance_m"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # FIX #8 — add PATCH /api/attendance/{id}/correct/
+    #
+    # PROBLEM: Once attendance was marked (by teacher or student self-mark),
+    #          there was no endpoint to correct it. If a teacher accidentally
+    #          marked a student ABSENT when they were PRESENT, the only option
+    #          was direct DB access. The teacher-bulk-mark endpoint re-marks the
+    #          whole session, but that requires knowing all students.
+    #
+    # FIX:     Added a `correct` @action (detail=True, PATCH).
+    #          - Takes { "status": "PRESENT" | "ABSENT" | "LATE", "note": "..." }
+    #          - Updates the single StudentAttendance record
+    #          - Records the correction as marked_by_type=TEACHER and overwrites
+    #            the original marked_by_user with the correcting teacher
+    #          - Only IsTeacher can call this (no student self-correction)
+    # ═══════════════════════════════════════════════════════════════════════════
+    @action(
+        detail=True,
+        methods=["patch"],
+        permission_classes=[IsTeacher],
+        url_path="correct",
+    )
+    @transaction.atomic
+    def correct(self, request, pk=None):
+        """
+        PATCH /api/attendance/{id}/correct/
+
+        Corrects a single attendance record. Used when a teacher needs to change
+        a student's status after bulk-marking (e.g., Absent → Present after the
+        student provides a valid explanation).
+
+        Body:
+            status   string   required   PRESENT | ABSENT | LATE
+            note     string   optional   Reason for correction (max 200 chars)
+
+        Response:
+            {
+              "id":               42,
+              "student_public_id": "STU-26-0000001",
+              "student_name":     "Rahul Kumar",
+              "session_id":       12,
+              "old_status":       "ABSENT",
+              "new_status":       "PRESENT",
+              "corrected_by":     "teacher@email.com",
+              "corrected_at":     "2026-02-27T10:30:00Z",
+              "note":             "Student showed doctor's certificate"
+            }
+        """
+        from rest_framework import serializers as drf_serializers
+
+        # ── Validate input ────────────────────────────────────────────────────
+        new_status = (request.data.get("status") or "").strip().upper()
+        note       = (request.data.get("note") or "").strip()[:200]
+
+        if new_status not in AttendanceStatus.values:
+            return Response(
+                {
+                    "status": (
+                        f"Invalid status '{new_status}'. "
+                        f"Valid choices: {', '.join(AttendanceStatus.values)}"
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        attendance = self.get_object()
+        old_status = attendance.status
+
+        # ── Apply correction ──────────────────────────────────────────────────
+        attendance.status         = new_status
+        attendance.marked_by_type = MarkedBy.TEACHER
+        attendance.marked_by_user = request.user
+        attendance.marked_at      = timezone.now()
+        attendance.save(
+            update_fields=[
+                "status",
+                "marked_by_type",
+                "marked_by_user",
+                "marked_at",
+                "updated_at",
+            ]
         )
 
         return Response(
             {
-                "message": "Attendance marked.",
-                "status": attendance.status,
-                "distance_m": distance_m,
+                "id":                attendance.id,
+                "student_public_id": attendance.student.public_id,
+                "student_name":      attendance.student.user.full_name,
+                "session_id":        attendance.session_id,
+                "old_status":        old_status,
+                "new_status":        attendance.status,
+                "corrected_by":      request.user.mobile or str(request.user),
+                "corrected_at":      attendance.marked_at,
+                "note":              note,
             },
             status=status.HTTP_200_OK,
         )

@@ -1,23 +1,24 @@
 """
-billing/api/views.py
+billing/api/views.py  — COMPLETE FIXED VERSION
 
 All billing-related ViewSets.
 
 Endpoints
 ─────────
 Payment Settings (Admin)
-  GET/POST/PATCH  /api/payment-settings/        Upsert branch bank/UPI details
+  GET/POST/PATCH  /api/payment-settings/
 
-Fee Invoices (Admin)
-  GET             /api/invoices/                List invoices
-  POST            /api/invoices/generate/       Bulk-generate invoices for a month
+Fee Invoices
+  GET             /api/invoices/            Admin: all branch invoices
+  GET             /api/invoices/my/         Student: own invoices    ← FIX #2 (new)
+  POST            /api/invoices/generate/   Admin: bulk-generate for a month
 
 Payment Transactions
-  GET             /api/transactions/            Admin: list all transactions
+  GET             /api/transactions/            Admin: all transactions
   POST            /api/transactions/            Student: upload payment proof
-  GET             /api/transactions/my/         Student: view own transactions
-  POST            /api/transactions/{id}/approve/  Admin: approve payment
-  POST            /api/transactions/{id}/reject/   Admin: reject payment
+  GET             /api/transactions/my/         Student: own history
+  POST            /api/transactions/{id}/approve/
+  POST            /api/transactions/{id}/reject/
 """
 from __future__ import annotations
 
@@ -84,22 +85,43 @@ class PaymentSettingsViewSet(TenantViewSet):
         return Response(PaymentSettingsSerializer(saved).data, status=status.HTTP_200_OK)
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIX #2 — FeeInvoiceViewSet: add student-facing /api/invoices/my/ endpoint
+#
+# PROBLEM: FeeInvoiceViewSet was 100% admin-scoped. Students had no way to
+#          see their own invoices — the billing page in the student app showed
+#          nothing because there was no valid endpoint to call.
+#
+# FIX:     Added a `my` @action scoped to IsStudentOrParent. It resolves the
+#          student profile from request.user and returns only their invoices.
+#          get_permissions() is updated to allow the new action for students.
+# ═══════════════════════════════════════════════════════════════════════════════
 class FeeInvoiceViewSet(StatusFilterMixin, TenantViewSet):
     """
-    Admin-only: list invoices and bulk-generate for a period.
+    Fee invoice management.
+
+    Admin endpoints:
+        GET  /api/invoices/           All branch invoices
+        POST /api/invoices/generate/  Bulk-generate for a month
+
+    Student endpoint:
+        GET  /api/invoices/my/        Own invoices only
 
     Query params:
-        ?status=DUE | PAID | PARTIAL | CANCELLED
+        ?status=DUE | PAID | PARTIAL | CANCELLED | OVERDUE
         ?batch_id=<int>
-
-    Custom action:
-        POST /api/invoices/generate/   Body: { period_year, period_month, due_date, amount, batch_id? }
     """
     serializer_class = FeeInvoiceSerializer
-    permission_classes = [IsBranchAdmin]
-    queryset = FeeInvoice.objects.select_related("student", "student__user", "batch").all()
+    queryset = FeeInvoice.objects.select_related(
+        "student", "student__user", "batch"
+    ).all()
     ordering = ["-period_year", "-period_month", "-created_at"]
     http_method_names = ["get", "post"]
+
+    def get_permissions(self):
+        if self.action == "my":
+            return [IsStudentOrParent()]
+        return [IsBranchAdmin()]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -107,6 +129,68 @@ class FeeInvoiceViewSet(StatusFilterMixin, TenantViewSet):
         if batch_id:
             qs = qs.filter(batch_id=batch_id)
         return qs
+
+    @action(detail=False, methods=["get"], url_path="my")
+    def my(self, request):
+        """
+        GET /api/invoices/my/
+
+        Returns the authenticated student's own fee invoices, newest first.
+        Shows current balance, due dates, and payment status at a glance.
+
+        Permission: IsStudentOrParent
+
+        Query params:
+            ?status=DUE | PAID | PARTIAL | CANCELLED
+            ?year=2026    Filter by period year
+            ?month=2      Filter by period month
+        """
+        from apps.academics.models import StudentProfile
+
+        ctx = self.get_tenant()
+
+        # Resolve student profile for this branch
+        student = StudentProfile.objects.filter(
+            user=request.user,
+            organisation=ctx.organisation,
+            branch=ctx.branch,
+        ).first()
+        if not student:
+            return Response(
+                {"detail": "Student profile not found for this branch."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        qs = (
+            FeeInvoice.objects
+            .filter(
+                student=student,
+                organisation=ctx.organisation,
+                branch=ctx.branch,
+            )
+            .select_related("batch")
+            .order_by("-period_year", "-period_month", "-created_at")
+        )
+
+        # Optional status filter
+        status_param = request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(status=status_param.upper())
+
+        # Optional period filters
+        year = request.query_params.get("year")
+        if year:
+            qs = qs.filter(period_year=year)
+        month = request.query_params.get("month")
+        if month:
+            qs = qs.filter(period_month=month)
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            return self.get_paginated_response(
+                FeeInvoiceSerializer(page, many=True).data
+            )
+        return Response(FeeInvoiceSerializer(qs, many=True).data)
 
     @action(detail=False, methods=["post"], url_path="generate")
     @transaction.atomic
