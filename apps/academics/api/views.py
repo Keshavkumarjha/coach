@@ -100,13 +100,15 @@ class TeacherViewSet(SearchFilterMixin, TenantViewSet):
 
 class StudentViewSet(SearchFilterMixin, TenantViewSet):
     """
-    CRUD for StudentProfiles scoped to current branch.
-    Query params: ?search=<name, mobile, or admission_no>
+    CRUD for StudentProfiles.
+
+    Query params:
+        ?search=<name, mobile, or admission_no>
 
     Custom actions:
-        GET  /{id}/enrollments/   List batch enrollments for this student
-        POST /{id}/enroll/        Enroll into a batch  { batch_id }
-        POST /{id}/unenroll/      Mark enrollment as LEFT  { batch_id }
+        GET  /{id}/enrollments/
+        POST /{id}/enroll/    { batch_id }
+        POST /{id}/unenroll/  { batch_id }
     """
     queryset = StudentProfile.objects.select_related("user").all()
     ordering = ["-created_at"]
@@ -142,53 +144,37 @@ class StudentViewSet(SearchFilterMixin, TenantViewSet):
         Body: { "batch_id": <int> }
         Creates or re-activates a BatchEnrollment.
         """
-        ctx = self.get_tenant()
-        student = self.get_object()
+        ctx      = self.get_tenant()
+        student  = self.get_object()
         batch_id = request.data.get("batch_id")
         if not batch_id:
-            return Response(
-                {"batch_id": "This field is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"batch_id": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         batch = Batch.objects.filter(
-            id=batch_id,
-            organisation=ctx.organisation,
-            branch=ctx.branch,
+            id=batch_id, organisation=ctx.organisation, branch=ctx.branch
         ).first()
         if not batch:
-            return Response(
-                {"batch_id": "Invalid batch for this branch."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"batch_id": "Invalid batch for this branch."}, status=status.HTTP_400_BAD_REQUEST)
+
         enrollment, _ = BatchEnrollment.objects.update_or_create(
             batch=batch,
             student=student,
             defaults={"status": EnrollmentStatus.ACTIVE},
         )
-        return Response(
-            EnrollmentSerializer(enrollment).data,
-            status=status.HTTP_200_OK,
-        )
+        return Response(EnrollmentSerializer(enrollment).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="unenroll")
     @transaction.atomic
     def unenroll(self, request, pk=None):
-        """
-        POST /api/students/{id}/unenroll/
-        Body: { "batch_id": <int> }
-        Marks the enrollment as LEFT.
-        """
-        ctx = self.get_tenant()
-        student = self.get_object()
+        """POST /api/students/{id}/unenroll/  Body: { batch_id }"""
+        ctx      = self.get_tenant()
+        student  = self.get_object()
         batch_id = request.data.get("batch_id")
         if not batch_id:
-            return Response(
-                {"batch_id": "This field is required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"batch_id": "This field is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         enrollment = (
             BatchEnrollment.objects
-            .select_related("batch")
             .filter(
                 student=student,
                 batch_id=batch_id,
@@ -198,10 +184,8 @@ class StudentViewSet(SearchFilterMixin, TenantViewSet):
             .first()
         )
         if not enrollment:
-            return Response(
-                {"detail": "Enrollment not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"detail": "Enrollment not found."}, status=status.HTTP_404_NOT_FOUND)
+
         enrollment.status = EnrollmentStatus.LEFT
         enrollment.save(update_fields=["status", "updated_at"])
         return Response({"message": "Student unenrolled."}, status=status.HTTP_200_OK)
@@ -219,19 +203,18 @@ class StudentViewSet(SearchFilterMixin, TenantViewSet):
 # ═══════════════════════════════════════════════════════════════════════════════
 class TimeTableSlotViewSet(TenantViewSet):
     """
-    CRUD for TimeTableSlots scoped to current branch.
+    Timetable slots scoped to current branch.
 
     Permissions:
         create / update / delete  → IsBranchAdmin
-        list / retrieve           → IsStudentOrParent  OR  IsBranchAdmin
+        list / retrieve           → IsStudentOrParent OR IsBranchAdmin
+
+    FIX: Students and parents only see slots for their enrolled batches.
+    Admins and teachers see all slots.
 
     Query params:
-        ?batch_id=<int>    Filter by batch (admin/teacher; auto-applied for students)
-        ?weekday=<0-6>     0=Monday … 6=Sunday
-
-    Role-aware queryset:
-        STUDENT / PARENT  → Only their enrolled batches' slots
-        TEACHER / ADMIN   → All slots in the branch
+        ?batch_id=<int>    Admin/teacher only — students get auto-filtered
+        ?weekday=<1-7>     1=Mon … 7=Sun
     """
     serializer_class = TimeTableSlotSerializer
     queryset = TimeTableSlot.objects.select_related("batch", "subject", "teacher").all()
@@ -245,35 +228,27 @@ class TimeTableSlotViewSet(TenantViewSet):
     def get_queryset(self):
         from apps.accounts.models import Role
 
-        qs = super().get_queryset()
+        qs  = super().get_queryset()
         ctx = self.get_tenant()
-        role = ctx.membership.role
 
-        # ── Student / Parent: restrict to enrolled batches ────────────────────
-        if role in {Role.STUDENT, Role.PARENT}:
-            student = (
-                StudentProfile.objects
-                .filter(
-                    user=self.request.user,
-                    organisation=ctx.organisation,
-                    branch=ctx.branch,
-                )
-                .first()
-            )
+        # Students/Parents: restrict to their enrolled batches
+        if ctx.membership.role in {Role.STUDENT, Role.PARENT}:
+            student = StudentProfile.objects.filter(
+                user=self.request.user,
+                organisation=ctx.organisation,
+                branch=ctx.branch,
+            ).first()
             if not student:
                 return qs.none()
-
-            enrolled_batch_ids = (
-                BatchEnrollment.objects
-                .filter(student=student, status=EnrollmentStatus.ACTIVE)
-                .values_list("batch_id", flat=True)
-            )
+            enrolled_batch_ids = BatchEnrollment.objects.filter(
+                student=student, status=EnrollmentStatus.ACTIVE
+            ).values_list("batch_id", flat=True)
             qs = qs.filter(batch_id__in=enrolled_batch_ids)
-
-        # ── Optional manual filters (admin/teacher) ───────────────────────────
-        batch_id = self.request.query_params.get("batch_id")
-        if batch_id:
-            qs = qs.filter(batch_id=batch_id)
+        else:
+            # Admin/Teacher: optional manual batch filter
+            batch_id = self.request.query_params.get("batch_id")
+            if batch_id:
+                qs = qs.filter(batch_id=batch_id)
 
         weekday = self.request.query_params.get("weekday")
         if weekday is not None:

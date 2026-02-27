@@ -1,297 +1,254 @@
 """
-idcards/api/serializers.py  — COMPLETE FIXED VERSION
+idcards/api/serializers.py  — COMPLETE VERSION
 
-The GenerateIdCardSerializer.save() was a stub — it created GeneratedIdCard DB
-rows but the pdf_file field was always null, so there was no downloadable card.
+IdCardTemplate CRUD serializer + GenerateIdCardSerializer that produces real PDFs.
 
-FIX #7 — Implement real ID card PDF generation using WeasyPrint.
-
-The template's layout_json drives the card design. Each card is rendered as
-an HTML string (from the layout), converted to PDF bytes, and saved to media.
-The GeneratedIdCard row is then updated with the pdf_file path.
-
-layout_json schema expected by the renderer:
-{
-  "background_color": "#ffffff",
-  "logo_url":         "https://...",   # optional
-  "fields": [
-    { "key": "name",         "label": "Name",     "x": 20, "y": 60,  "font_size": 14 },
-    { "key": "admission_no", "label": "Adm No",   "x": 20, "y": 90,  "font_size": 11 },
-    { "key": "batch",        "label": "Class",    "x": 20, "y": 115, "font_size": 11 },
-    { "key": "branch",       "label": "Branch",   "x": 20, "y": 140, "font_size": 11 },
-    { "key": "mobile",       "label": "Mobile",   "x": 20, "y": 165, "font_size": 10 }
-  ],
-  "width_mm":  86,
-  "height_mm": 54
-}
-
-Supported field keys for students:
-  name, admission_no, roll_no, batch, branch, org, mobile, public_id
-
-Supported field keys for teachers:
-  name, subject, branch, org, mobile, public_id
+PDF generation uses WeasyPrint if available (pip install weasyprint).
+Falls back to a minimal stub PDF if WeasyPrint is not installed so the endpoint
+doesn't break in development.
 """
 from __future__ import annotations
 
 import io
-import os
-import textwrap
 from django.core.files.base import ContentFile
-from django.db import transaction
 from rest_framework import serializers
 
-from apps.common.tenant import get_tenant_context
 from apps.idcards.models import IdCardTemplate, GeneratedIdCard
-from apps.academics.models import StudentProfile, TeacherProfile, BatchEnrollment, EnrollmentStatus
+from apps.academics.models import StudentProfile, TeacherProfile
+from apps.common.tenant import get_tenant_context
 
-
-# ─── Template serializer ──────────────────────────────────────────────────────
 
 class IdCardTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = IdCardTemplate
-        fields = ["id", "name", "layout_json", "created_at"]
-        read_only_fields = ["id", "created_at"]
-
-    def create(self, validated_data):
-        request = self.context["request"]
-        ctx = get_tenant_context(request)
-        return IdCardTemplate.objects.create(
-            organisation=ctx.organisation,
-            branch=ctx.branch,
-            created_by=request.user,
-            **validated_data,
-        )
+        fields = [
+            "id",
+            "name",
+            "layout_json",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
-# ─── ID Card PDF renderer ─────────────────────────────────────────────────────
+class GeneratedIdCardSerializer(serializers.ModelSerializer):
+    student_name  = serializers.SerializerMethodField()
+    teacher_name  = serializers.SerializerMethodField()
+    pdf_url       = serializers.SerializerMethodField()
+    template_name = serializers.CharField(source="template.name", read_only=True)
 
-def _render_card_html(layout: dict, data: dict) -> str:
-    """
-    Renders a single ID card as an HTML string using layout_json and field data.
-    The HTML is self-contained and suitable for PDF conversion via WeasyPrint.
-    """
-    bg    = layout.get("background_color", "#ffffff")
-    w_mm  = layout.get("width_mm", 86)
-    h_mm  = layout.get("height_mm", 54)
-    fields = layout.get("fields", [])
-    logo  = layout.get("logo_url", "")
+    class Meta:
+        model = GeneratedIdCard
+        fields = [
+            "id",
+            "template",
+            "template_name",
+            "student",
+            "student_name",
+            "teacher",
+            "teacher_name",
+            "pdf_url",
+            "created_at",
+        ]
+        read_only_fields = fields
 
-    field_html = ""
-    for f in fields:
-        key   = f.get("key", "")
-        label = f.get("label", "")
-        x     = f.get("x", 10)
-        y     = f.get("y", 10)
-        fs    = f.get("font_size", 11)
-        value = data.get(key, "")
-        field_html += (
-            f'<div style="position:absolute; left:{x}mm; top:{y}mm; '
-            f'font-size:{fs}pt; font-family:Arial,sans-serif;">'
-            f'<span style="color:#666; font-size:{fs-2}pt;">{label}: </span>'
-            f'<strong>{value}</strong></div>'
-        )
+    def get_student_name(self, obj) -> str | None:
+        return obj.student.user.full_name if obj.student else None
 
-    logo_html = ""
-    if logo:
-        logo_html = (
-            f'<img src="{logo}" style="position:absolute; right:4mm; top:4mm; '
-            f'max-height:16mm; max-width:24mm;" />'
-        )
+    def get_teacher_name(self, obj) -> str | None:
+        return obj.teacher.user.full_name if obj.teacher else None
 
-    return textwrap.dedent(f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8"/>
-            <style>
-                @page {{
-                    size: {w_mm}mm {h_mm}mm;
-                    margin: 0;
-                }}
-                body {{
-                    margin: 0;
-                    padding: 0;
-                    width: {w_mm}mm;
-                    height: {h_mm}mm;
-                    background-color: {bg};
-                    position: relative;
-                    overflow: hidden;
-                }}
-            </style>
-        </head>
-        <body>
-            {logo_html}
-            {field_html}
-        </body>
-        </html>
-    """).strip()
+    def get_pdf_url(self, obj) -> str | None:
+        if obj.pdf_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.pdf_file.url)
+            return obj.pdf_file.url
+        return None
 
 
-def _html_to_pdf_bytes(html: str) -> bytes:
-    """
-    Convert HTML string → PDF bytes using WeasyPrint.
-    Falls back to a stub if WeasyPrint is not installed.
-    """
-    try:
-        from weasyprint import HTML
-        return HTML(string=html).write_pdf()
-    except ImportError:
-        # WeasyPrint not installed — return a minimal stub PDF
-        # Install with: pip install weasyprint
-        stub = (
-            b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-            b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
-            b"3 0 obj<</Type/Page/MediaBox[0 0 245 153]/Parent 2 0 R/Resources<<>>>>endobj\n"
-            b"xref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n"
-            b"0000000058 00000 n\n0000000115 00000 n\ntrailer<</Size 4/Root 1 0 R>>\n"
-            b"startxref\n190\n%%EOF"
-        )
-        return stub
-
-
-def _build_student_data(student: "StudentProfile") -> dict:
-    """Extract display fields from a StudentProfile."""
-    # Primary batch (most recent active enrollment)
-    enrollment = (
-        BatchEnrollment.objects
-        .select_related("batch")
-        .filter(student=student, status=EnrollmentStatus.ACTIVE)
-        .order_by("-created_at")
-        .first()
-    )
-    return {
-        "name":         student.user.full_name or student.user.mobile,
-        "admission_no": student.admission_no or "",
-        "roll_no":      student.roll_no or "",
-        "batch":        enrollment.batch.name if enrollment else "",
-        "branch":       student.branch.name if student.branch else "",
-        "org":          student.organisation.name if student.organisation else "",
-        "mobile":       student.user.mobile or "",
-        "public_id":    student.public_id or "",
-    }
-
-
-def _build_teacher_data(teacher: "TeacherProfile") -> dict:
-    """Extract display fields from a TeacherProfile."""
-    return {
-        "name":      teacher.user.full_name or teacher.user.mobile,
-        "branch":    teacher.branch.name if teacher.branch else "",
-        "org":       teacher.organisation.name if teacher.organisation else "",
-        "mobile":    teacher.user.mobile or "",
-        "public_id": teacher.public_id or "",
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# FIX #7 — GenerateIdCardSerializer: real PDF generation
-#
-# PROBLEM: create() created GeneratedIdCard DB rows but pdf_file was always
-#          null. The frontend got back { "created": 45 } but could never
-#          download any actual ID cards.
-#
-# FIX:     For each student/teacher, render an HTML card from layout_json,
-#          convert to PDF bytes via WeasyPrint, and save to Django media storage
-#          as idcards/<org_id>/<public_id>.pdf.
-#          The GeneratedIdCard row is updated with the pdf_file field.
-#          Returns { created, failed, card_urls } so the frontend can show
-#          download links immediately after generation.
-# ═══════════════════════════════════════════════════════════════════════════════
 class GenerateIdCardSerializer(serializers.Serializer):
-    template_id        = serializers.IntegerField()
-    student_public_ids = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
-    teacher_public_ids = serializers.ListField(child=serializers.CharField(), required=False, allow_empty=True)
+    """
+    Bulk generate ID cards as PDFs.
+
+    Body:
+        template_id            int   required
+        student_public_ids     list  optional  ["STU-26-0000001", ...]
+        teacher_public_ids     list  optional  ["TCH-26-0000001", ...]
+    """
+    template_id         = serializers.IntegerField()
+    student_public_ids  = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True, default=list
+    )
+    teacher_public_ids  = serializers.ListField(
+        child=serializers.CharField(), required=False, allow_empty=True, default=list
+    )
 
     def validate(self, attrs):
         if not attrs.get("student_public_ids") and not attrs.get("teacher_public_ids"):
             raise serializers.ValidationError(
-                "At least one of student_public_ids or teacher_public_ids is required."
+                "Provide at least one of student_public_ids or teacher_public_ids."
             )
         return attrs
 
-    @transaction.atomic
-    def create(self, vd):
+    def save(self) -> dict:
         request = self.context["request"]
-        ctx = get_tenant_context(request)
+        ctx     = get_tenant_context(request)
+        vd      = self.validated_data
 
-        tpl = IdCardTemplate.objects.filter(
+        template = IdCardTemplate.objects.filter(
             id=vd["template_id"],
             organisation=ctx.organisation,
         ).first()
-        if not tpl:
-            raise serializers.ValidationError({"template_id": "Invalid template."})
+        if not template:
+            raise serializers.ValidationError({"template_id": "Template not found for this organisation."})
 
-        layout = tpl.layout_json or {}
-        created   = 0
-        failed    = 0
+        created  = 0
+        failed   = 0
         card_urls = []
 
-        # ── Generate for students ─────────────────────────────────────────────
-        stu_ids = vd.get("student_public_ids") or []
-        if stu_ids:
-            students = StudentProfile.objects.filter(
-                organisation=ctx.organisation,
-                branch=ctx.branch,
-                public_id__in=stu_ids,
-            ).select_related("user", "branch", "organisation")
-
-            for student in students:
-                try:
-                    data     = _build_student_data(student)
-                    html     = _render_card_html(layout, data)
-                    pdf_bytes = _html_to_pdf_bytes(html)
-                    filename  = f"idcards/{ctx.organisation.id}/student_{student.public_id}.pdf"
-
-                    card, _ = GeneratedIdCard.objects.update_or_create(
-                        template=tpl,
-                        student=student,
-                        defaults={},
-                    )
-                    card.pdf_file.save(filename, ContentFile(pdf_bytes), save=True)
+        # Students
+        for pub_id in vd.get("student_public_ids", []):
+            student = StudentProfile.objects.select_related("user", "branch").filter(
+                public_id=pub_id, organisation=ctx.organisation
+            ).first()
+            if not student:
+                failed += 1
+                continue
+            try:
+                pdf_bytes = self._generate_pdf(template, student=student)
+                card      = GeneratedIdCard.objects.create(
+                    template=template,
+                    student=student,
+                )
+                filename = f"idcards/{ctx.organisation.id}/{pub_id}.pdf"
+                card.pdf_file.save(filename, ContentFile(pdf_bytes), save=True)
+                if card.pdf_file:
                     card_urls.append(card.pdf_file.url)
-                    created += 1
-                except Exception:
-                    failed += 1
+                created += 1
+            except Exception:
+                failed += 1
 
-        # ── Generate for teachers ─────────────────────────────────────────────
-        tch_ids = vd.get("teacher_public_ids") or []
-        if tch_ids:
-            teachers = TeacherProfile.objects.filter(
-                organisation=ctx.organisation,
-                branch=ctx.branch,
-                public_id__in=tch_ids,
-            ).select_related("user", "branch", "organisation")
-
-            for teacher in teachers:
-                try:
-                    data     = _build_teacher_data(teacher)
-                    html     = _render_card_html(layout, data)
-                    pdf_bytes = _html_to_pdf_bytes(html)
-                    filename  = f"idcards/{ctx.organisation.id}/teacher_{teacher.public_id}.pdf"
-
-                    card, _ = GeneratedIdCard.objects.update_or_create(
-                        template=tpl,
-                        teacher=teacher,
-                        defaults={},
-                    )
-                    card.pdf_file.save(filename, ContentFile(pdf_bytes), save=True)
+        # Teachers
+        for pub_id in vd.get("teacher_public_ids", []):
+            teacher = TeacherProfile.objects.select_related("user", "branch").filter(
+                public_id=pub_id, organisation=ctx.organisation
+            ).first()
+            if not teacher:
+                failed += 1
+                continue
+            try:
+                pdf_bytes = self._generate_pdf(template, teacher=teacher)
+                card      = GeneratedIdCard.objects.create(
+                    template=template,
+                    teacher=teacher,
+                )
+                filename = f"idcards/{ctx.organisation.id}/{pub_id}.pdf"
+                card.pdf_file.save(filename, ContentFile(pdf_bytes), save=True)
+                if card.pdf_file:
                     card_urls.append(card.pdf_file.url)
-                    created += 1
-                except Exception:
-                    failed += 1
+                created += 1
+            except Exception:
+                failed += 1
 
-        return {
-            "created":   created,
-            "failed":    failed,
-            "card_urls": card_urls,
-        }
+        return {"created": created, "failed": failed, "card_urls": card_urls}
+
+    # ── PDF generation ────────────────────────────────────────────────────────
+
+    def _generate_pdf(
+        self,
+        template: IdCardTemplate,
+        student: StudentProfile | None = None,
+        teacher: TeacherProfile | None = None,
+    ) -> bytes:
+        html = self._render_html(template, student=student, teacher=teacher)
+        return self._html_to_pdf(html)
+
+    def _render_html(self, template: IdCardTemplate, **kwargs) -> str:
+        layout = template.layout_json
+        bg     = layout.get("background_color", "#ffffff")
+        logo   = layout.get("logo_url", "")
+        fields = layout.get("fields", [])
+
+        profile = kwargs.get("student") or kwargs.get("teacher")
+        user    = profile.user if profile else None
+        org     = template.organisation
+
+        # Build field values from person data
+        def _field_value(field_name: str) -> str:
+            mapping = {
+                "name":         user.full_name if user else "",
+                "mobile":       user.mobile    if user else "",
+                "admission_no": getattr(profile, "admission_no", ""),
+                "roll_no":      getattr(profile, "roll_no", ""),
+                "employee_id":  getattr(profile, "employee_id", ""),
+                "designation":  getattr(profile, "designation", ""),
+                "public_id":    profile.public_id if profile else "",
+                "batch":        _get_batch(profile),
+                "branch":       profile.branch.name if profile and hasattr(profile, "branch") and profile.branch else "",
+                "org":          org.name,
+            }
+            return mapping.get(field_name, field_name)
+
+        # Overlay fields as positioned text
+        fields_html = ""
+        for f in fields:
+            val   = _field_value(f.get("name", ""))
+            x     = f.get("x", 0)
+            y     = f.get("y", 0)
+            fsize = f.get("font_size", 12)
+            color = f.get("color", "#000000")
+            fields_html += (
+                f'<div style="position:absolute;left:{x}px;top:{y}px;'
+                f'font-size:{fsize}px;color:{color}">{val}</div>\n'
+            )
+
+        logo_html = f'<img src="{logo}" style="max-height:50px;margin-bottom:8px"/>' if logo else ""
+
+        return f"""<!DOCTYPE html><html><head>
+<meta charset="utf-8"/>
+<style>
+  body {{ margin: 0; padding: 0; }}
+  .card {{ width: 300px; height: 200px; background: {bg}; position: relative;
+           border: 1px solid #ccc; font-family: Arial, sans-serif; padding: 16px; box-sizing: border-box; }}
+  h2 {{ margin: 0 0 4px 0; font-size: 14px; }}
+  p  {{ margin: 2px 0; font-size: 11px; }}
+</style>
+</head><body>
+<div class="card">
+  {logo_html}
+  <h2>{org.name}</h2>
+  <p><b>Name:</b> {user.full_name if user else ""}</p>
+  <p><b>ID:</b> {profile.public_id if profile else ""}</p>
+  <p><b>Mobile:</b> {user.mobile if user else ""}</p>
+  {fields_html}
+</div>
+</body></html>"""
+
+    @staticmethod
+    def _html_to_pdf(html: str) -> bytes:
+        try:
+            from weasyprint import HTML
+            return HTML(string=html).write_pdf()
+        except ImportError:
+            # Stub minimal PDF if WeasyPrint not installed
+            return (
+                b"%PDF-1.4\n1 0 obj<</Type /Catalog /Pages 2 0 R>>endobj\n"
+                b"2 0 obj<</Type /Pages /Kids [3 0 R] /Count 1>>endobj\n"
+                b"3 0 obj<</Type /Page /Parent 2 0 R /MediaBox [0 0 200 100]>>endobj\n"
+                b"xref\n0 4\n0000000000 65535 f\n"
+                b"trailer<</Size 4 /Root 1 0 R>>\n%%EOF\n"
+            )
 
 
-class GeneratedIdCardSerializer(serializers.ModelSerializer):
-    student_public_id = serializers.CharField(source="student.public_id", read_only=True)
-    teacher_public_id = serializers.CharField(source="teacher.public_id", read_only=True)
-
-    class Meta:
-        model = GeneratedIdCard
-        fields = ["id", "template", "student_public_id", "teacher_public_id", "pdf_file", "created_at"]
-        read_only_fields = fields
+def _get_batch(profile) -> str:
+    if profile is None:
+        return ""
+    try:
+        from apps.academics.models import BatchEnrollment, EnrollmentStatus
+        enrollment = BatchEnrollment.objects.filter(
+            student=profile, status=EnrollmentStatus.ACTIVE
+        ).select_related("batch").first()
+        return enrollment.batch.name if enrollment else ""
+    except Exception:
+        return ""

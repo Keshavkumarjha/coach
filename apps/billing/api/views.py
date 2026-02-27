@@ -1,122 +1,97 @@
 """
-billing/api/views.py  — COMPLETE FIXED VERSION
+billing/api/views.py  — COMPLETE VERSION
 
-All billing-related ViewSets.
+All billing endpoints:
+  GET/POST      /api/payment-settings/
+  GET/PATCH     /api/payment-settings/{id}/
 
-Endpoints
-─────────
-Payment Settings (Admin)
-  GET/POST/PATCH  /api/payment-settings/
+  GET/POST      /api/invoices/
+  GET           /api/invoices/{id}/
+  POST          /api/invoices/generate/          Bulk generate invoices for a batch+period
+  GET           /api/invoices/my/                Student's own invoices (IsStudentOrParent)
 
-Fee Invoices
-  GET             /api/invoices/            Admin: all branch invoices
-  GET             /api/invoices/my/         Student: own invoices    ← FIX #2 (new)
-  POST            /api/invoices/generate/   Admin: bulk-generate for a month
-
-Payment Transactions
-  GET             /api/transactions/            Admin: all transactions
-  POST            /api/transactions/            Student: upload payment proof
-  GET             /api/transactions/my/         Student: own history
-  POST            /api/transactions/{id}/approve/
-  POST            /api/transactions/{id}/reject/
+  GET/POST      /api/transactions/
+  GET           /api/transactions/{id}/
+  POST          /api/transactions/{id}/approve/
+  POST          /api/transactions/{id}/reject/
 """
 from __future__ import annotations
+
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.common.mixins import (
     TenantViewSet,
-    ApproveRejectMixin,
     StatusFilterMixin,
-    DateRangeFilterMixin,
+    ApproveRejectMixin,
 )
 from apps.common.permissions import IsBranchAdmin, IsStudentOrParent
+from apps.billing.api.serializers import (
+    PaymentSettingsSerializer,
+    FeeInvoiceSerializer,
+    PaymentTransactionSerializer,
+    GenerateInvoicesSerializer,
+)
 from apps.billing.models import (
+    PaymentSettings,
     FeeInvoice,
     InvoiceStatus,
-    PaymentSettings,
     PaymentTransaction,
     TxnStatus,
 )
-from apps.billing.api.serializers import (
-    FeeInvoiceSerializer,
-    InvoiceGenerateSerializer,
-    PaymentSettingsSerializer,
-    PaymentTransactionCreateSerializer,
-    PaymentTransactionSerializer,
-    TxnReviewSerializer,
-)
+from apps.academics.models import StudentProfile
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Payment Settings
+# ─────────────────────────────────────────────────────────────────────────────
 
 class PaymentSettingsViewSet(TenantViewSet):
     """
-    Singleton per branch: create or update bank/UPI/QR settings.
-
-    GET  /api/payment-settings/    Returns current settings (or empty list)
-    POST /api/payment-settings/    Upsert (create if missing, update if exists)
-    PATCH /api/payment-settings/{id}/
+    Bank account / UPI settings per branch.
+    Permission: IsBranchAdmin
     """
     serializer_class = PaymentSettingsSerializer
     permission_classes = [IsBranchAdmin]
     queryset = PaymentSettings.objects.all()
-    http_method_names = ["get", "post", "patch", "put"]
-
-    def create(self, request, *args, **kwargs):
-        ctx = self.get_tenant()
-        existing = PaymentSettings.objects.filter(
-            organisation=ctx.organisation,
-            branch=ctx.branch,
-        ).first()
-        serializer = PaymentSettingsSerializer(
-            instance=existing,
-            data=request.data,
-            partial=True,
-        )
-        serializer.is_valid(raise_exception=True)
-        saved = serializer.save(
-            organisation=ctx.organisation,
-            branch=ctx.branch,
-        )
-        return Response(PaymentSettingsSerializer(saved).data, status=status.HTTP_200_OK)
+    ordering = ["-created_at"]
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FIX #2 — FeeInvoiceViewSet: add student-facing /api/invoices/my/ endpoint
-#
-# PROBLEM: FeeInvoiceViewSet was 100% admin-scoped. Students had no way to
-#          see their own invoices — the billing page in the student app showed
-#          nothing because there was no valid endpoint to call.
-#
-# FIX:     Added a `my` @action scoped to IsStudentOrParent. It resolves the
-#          student profile from request.user and returns only their invoices.
-#          get_permissions() is updated to allow the new action for students.
-# ═══════════════════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────────
+# Fee Invoices
+# ─────────────────────────────────────────────────────────────────────────────
+
 class FeeInvoiceViewSet(StatusFilterMixin, TenantViewSet):
     """
     Fee invoice management.
 
     Admin endpoints:
-        GET  /api/invoices/           All branch invoices
-        POST /api/invoices/generate/  Bulk-generate for a month
+        GET    /api/invoices/              List (filter ?status=, ?batch_id=)
+        GET    /api/invoices/{id}/
+        POST   /api/invoices/generate/    Bulk-create invoices for batch + period
 
     Student endpoint:
-        GET  /api/invoices/my/        Own invoices only
+        GET    /api/invoices/my/          Student's own invoices
+
+    Permission:
+        Admin actions: IsBranchAdmin
+        my/ action:    IsStudentOrParent
 
     Query params:
-        ?status=DUE | PAID | PARTIAL | CANCELLED | OVERDUE
+        ?status=DUE | PAID | PARTIAL | CANCELLED
         ?batch_id=<int>
+        ?year=<int>
+        ?month=<int>
     """
     serializer_class = FeeInvoiceSerializer
-    queryset = FeeInvoice.objects.select_related(
-        "student", "student__user", "batch"
-    ).all()
-    ordering = ["-period_year", "-period_month", "-created_at"]
-    http_method_names = ["get", "post"]
+    permission_classes = [IsBranchAdmin]
+    queryset = FeeInvoice.objects.select_related("student", "student__user", "batch").all()
+    ordering = ["-created_at"]
 
     def get_permissions(self):
         if self.action == "my":
@@ -126,30 +101,49 @@ class FeeInvoiceViewSet(StatusFilterMixin, TenantViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         batch_id = self.request.query_params.get("batch_id")
+        year     = self.request.query_params.get("year")
+        month    = self.request.query_params.get("month")
         if batch_id:
             qs = qs.filter(batch_id=batch_id)
+        if year:
+            qs = qs.filter(period_year=year)
+        if month:
+            qs = qs.filter(period_month=month)
         return qs
+
+    @action(detail=False, methods=["post"], url_path="generate", permission_classes=[IsBranchAdmin])
+    @transaction.atomic
+    def generate(self, request):
+        """
+        POST /api/invoices/generate/
+
+        Bulk-generates invoices for all active students in a batch for a given period.
+
+        Body:
+            batch_id      int   required
+            period_year   int   required
+            period_month  int   required  (1–12)
+            due_date      date  required
+            amount        str   required  (decimal string)
+        """
+        serializer = GenerateInvoicesSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        return Response(result, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"], url_path="my")
     def my(self, request):
         """
         GET /api/invoices/my/
 
-        Returns the authenticated student's own fee invoices, newest first.
-        Shows current balance, due dates, and payment status at a glance.
-
-        Permission: IsStudentOrParent
-
-        Query params:
-            ?status=DUE | PAID | PARTIAL | CANCELLED
-            ?year=2026    Filter by period year
-            ?month=2      Filter by period month
+        Returns the current student's own invoices.
+        Supports ?status= / ?year= / ?month= filters.
         """
-        from apps.academics.models import StudentProfile
-
         ctx = self.get_tenant()
 
-        # Resolve student profile for this branch
         student = StudentProfile.objects.filter(
             user=request.user,
             organisation=ctx.organisation,
@@ -157,176 +151,113 @@ class FeeInvoiceViewSet(StatusFilterMixin, TenantViewSet):
         ).first()
         if not student:
             return Response(
-                {"detail": "Student profile not found for this branch."},
+                {"detail": "Student profile not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        qs = (
-            FeeInvoice.objects
-            .filter(
-                student=student,
-                organisation=ctx.organisation,
-                branch=ctx.branch,
-            )
-            .select_related("batch")
-            .order_by("-period_year", "-period_month", "-created_at")
-        )
+        qs = FeeInvoice.objects.filter(
+            organisation=ctx.organisation,
+            branch=ctx.branch,
+            student=student,
+        ).select_related("batch").order_by("-period_year", "-period_month")
 
-        # Optional status filter
-        status_param = request.query_params.get("status")
-        if status_param:
-            qs = qs.filter(status=status_param.upper())
-
-        # Optional period filters
-        year = request.query_params.get("year")
+        # Filters
+        s     = request.query_params.get("status")
+        year  = request.query_params.get("year")
+        month = request.query_params.get("month")
+        if s:
+            qs = qs.filter(status=s.upper())
         if year:
             qs = qs.filter(period_year=year)
-        month = request.query_params.get("month")
         if month:
             qs = qs.filter(period_month=month)
 
         page = self.paginate_queryset(qs)
         if page is not None:
-            return self.get_paginated_response(
-                FeeInvoiceSerializer(page, many=True).data
-            )
+            return self.get_paginated_response(FeeInvoiceSerializer(page, many=True).data)
         return Response(FeeInvoiceSerializer(qs, many=True).data)
 
-    @action(detail=False, methods=["post"], url_path="generate")
-    @transaction.atomic
-    def generate(self, request):
-        """
-        POST /api/invoices/generate/
-        Bulk-generates invoices for every active student in a branch (or batch).
-        """
-        serializer = InvoiceGenerateSerializer(
-            data=request.data,
-            context={"request": request},
-        )
-        serializer.is_valid(raise_exception=True)
-        result = serializer.save()
-        return Response(
-            {"message": "Invoices generated.", **result},
-            status=status.HTTP_200_OK,
-        )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Payment Transactions
+# ─────────────────────────────────────────────────────────────────────────────
 
-class PaymentTransactionViewSet(
-    ApproveRejectMixin,
-    DateRangeFilterMixin,
-    StatusFilterMixin,
-    TenantViewSet,
-):
+class PaymentTransactionViewSet(StatusFilterMixin, ApproveRejectMixin, TenantViewSet):
     """
-    Student submits payment proof → admin approves/rejects.
+    Payment proof upload + admin approve/reject.
 
-    Permissions:
-        create, my  → IsStudentOrParent
-        all others  → IsBranchAdmin
+    GET/POST    /api/transactions/
+    POST        /api/transactions/{id}/approve/
+    POST        /api/transactions/{id}/reject/
 
-    Query params (admin list):
-        ?status=PENDING | APPROVED | REJECTED
-        ?from_date=YYYY-MM-DD
-        ?to_date=YYYY-MM-DD
-
-    Custom actions:
-        GET  /api/transactions/my/           Student's own transactions
-        POST /api/transactions/{id}/approve/ Approve + mark invoice PAID
-        POST /api/transactions/{id}/reject/  Reject
-
-    date_filter_field = "paid_at__date" (override from DateRangeFilterMixin)
+    Permission:
+        list/retrieve:   IsBranchAdmin
+        create:          IsStudentOrParent (student uploads proof)
+        approve/reject:  IsBranchAdmin
     """
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = PaymentTransactionSerializer
+    permission_classes = [IsBranchAdmin]
     queryset = PaymentTransaction.objects.select_related(
-        "student", "student__user", "invoice", "invoice__batch",
+        "student", "student__user", "invoice", "invoice__batch"
     ).all()
-    ordering = ["-paid_at", "-created_at"]
-    http_method_names = ["get", "post"]
-    date_filter_field = "paid_at__date"
+    ordering = ["-created_at"]
 
     def get_permissions(self):
-        if self.action in {"create", "my"}:
+        if self.action == "create":
             return [IsStudentOrParent()]
         return [IsBranchAdmin()]
 
-    def get_serializer_class(self):
-        if self.action == "create":
-            return PaymentTransactionCreateSerializer
-        return PaymentTransactionSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = PaymentTransactionCreateSerializer(
-            data=request.data,
-            context={"request": request},
-        )
-        serializer.is_valid(raise_exception=True)
-        txn = serializer.save()
-        return Response(
-            PaymentTransactionSerializer(txn).data,
-            status=status.HTTP_201_CREATED,
-        )
-
-    @action(detail=False, methods=["get"], url_path="my")
-    def my(self, request):
-        """
-        GET /api/transactions/my/
-        Returns the authenticated student's own payment history.
-        """
+    def perform_create(self, serializer):
         ctx = self.get_tenant()
-        student = getattr(request.user, "student_profile", None)
-        if not student:
-            return Response(
-                {"detail": "Student login required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        qs = (
-            PaymentTransaction.objects
-            .select_related("invoice", "invoice__batch")
-            .filter(
-                organisation=ctx.organisation,
-                branch=ctx.branch,
-                student=student,
-            )
-            .order_by("-paid_at")
+        serializer.save(
+            organisation=ctx.organisation,
+            branch=ctx.branch,
+            created_by=self.request.user,
         )
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            return self.get_paginated_response(PaymentTransactionSerializer(page, many=True).data)
-        return Response(PaymentTransactionSerializer(qs, many=True).data)
 
-    # ── ApproveRejectMixin hooks ──────────────────────────────────────────────
-
+    @transaction.atomic
     def _do_approve(self, request, txn: PaymentTransaction) -> dict:
         if txn.status != TxnStatus.PENDING:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"detail": "Transaction is not pending."})
 
-        note_serializer = TxnReviewSerializer(data=request.data)
-        note_serializer.is_valid(raise_exception=True)
+        note = (request.data.get("note") or "").strip()[:200]
 
-        txn.status = TxnStatus.APPROVED
+        txn.status      = TxnStatus.APPROVED
         txn.reviewed_by = request.user
         txn.reviewed_at = timezone.now()
-        txn.review_note = note_serializer.validated_data.get("note", "")
+        txn.review_note = note
         txn.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note", "updated_at"])
 
-        if txn.invoice_id:
-            FeeInvoice.objects.filter(pk=txn.invoice_id).update(status=InvoiceStatus.PAID)
+        # Mark related invoice as PAID if amount covers it
+        if txn.invoice:
+            total_approved = (
+                PaymentTransaction.objects
+                .filter(invoice=txn.invoice, status=TxnStatus.APPROVED)
+                .aggregate(t=__import__("django.db.models", fromlist=["Sum"]).Sum("amount"))["t"]
+                or Decimal("0")
+            )
+            if total_approved >= txn.invoice.amount:
+                txn.invoice.status = InvoiceStatus.PAID
+                txn.invoice.save(update_fields=["status", "updated_at"])
+            elif total_approved > 0:
+                txn.invoice.status = InvoiceStatus.PARTIAL
+                txn.invoice.save(update_fields=["status", "updated_at"])
 
-        return {"message": "Approved.", "public_id": txn.public_id}
+        return {"message": "Payment approved.", "status": TxnStatus.APPROVED}
 
+    @transaction.atomic
     def _do_reject(self, request, txn: PaymentTransaction) -> dict:
         if txn.status != TxnStatus.PENDING:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({"detail": "Transaction is not pending."})
 
-        note_serializer = TxnReviewSerializer(data=request.data)
-        note_serializer.is_valid(raise_exception=True)
+        note = (request.data.get("note") or "").strip()[:200]
 
-        txn.status = TxnStatus.REJECTED
+        txn.status      = TxnStatus.REJECTED
         txn.reviewed_by = request.user
         txn.reviewed_at = timezone.now()
-        txn.review_note = note_serializer.validated_data.get("note", "")
+        txn.review_note = note
         txn.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note", "updated_at"])
 
-        return {"message": "Rejected.", "public_id": txn.public_id}
+        return {"message": "Payment rejected.", "status": TxnStatus.REJECTED}
